@@ -158,7 +158,9 @@
     letter-spacing: 0.6px;
     display: flex;
     align-items: center;
+    justify-content: space-between;
     gap: 8px;
+    min-height: 22px;
   }
 
   .lang-badge {
@@ -373,6 +375,99 @@
     border: 1px solid #2d3561;
   }
   #clearBtn:hover { background: #1e2a3a; color: #a8d8ea; border-color: #a8d8ea; }
+
+  /* ── Auto-translate button ── */
+  #autoTranslateBtn {
+    background: transparent;
+    color: #8a6ec0;
+    border: 1px solid #4a3570;
+    font-size: 0.68rem;
+    padding: 0px 8px;
+    height: 18px;
+    line-height: 1;
+    font-weight: 500;
+    border-radius: 4px;
+    cursor: pointer;
+    flex-shrink: 0;
+    transition: all 0.18s;
+    letter-spacing: 0;
+  }
+  #autoTranslateBtn:hover { background: #1e1430; color: #b89ee0; border-color: #7a5ab0; transform: none; }
+
+  /* ── AI warning dialog ── */
+  .ai-dialog-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.65);
+    z-index: 100;
+    align-items: center;
+    justify-content: center;
+  }
+  .ai-dialog-overlay.open { display: flex; }
+
+  .ai-dialog {
+    background: #16213e;
+    border: 1px solid #4a3570;
+    border-radius: 10px;
+    max-width: 440px;
+    width: 90%;
+    overflow: hidden;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.6);
+  }
+
+  .ai-dialog-header {
+    background: #2a1a50;
+    padding: 12px 18px;
+    font-size: 0.88rem;
+    font-weight: 700;
+    color: #b89ee0;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .ai-dialog-body {
+    padding: 16px 18px;
+    font-size: 0.82rem;
+    color: #b0b8cc;
+    line-height: 1.6;
+  }
+
+  .ai-dialog-body strong { color: #e0d0ff; }
+
+  .ai-dialog-body ul {
+    margin: 10px 0 0 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .ai-dialog-footer {
+    padding: 12px 18px;
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+    border-top: 1px solid #2d3561;
+  }
+
+  #aiDialogCancel {
+    background: transparent;
+    color: #6a8a9a;
+    border: 1px solid #2d3561;
+    font-size: 0.82rem;
+    padding: 6px 16px;
+  }
+  #aiDialogCancel:hover { background: #1e2a3a; color: #a8d8ea; border-color: #a8d8ea; }
+
+  #aiDialogConfirm {
+    background: #2a1a50;
+    color: #b89ee0;
+    border: 1px solid #4a3570;
+    font-size: 0.82rem;
+    padding: 6px 16px;
+  }
+  #aiDialogConfirm:hover { background: #3a2560; color: #d0b8ff; border-color: #7a5ab0; transform: none; }
 </style>
 </head>
 <body>
@@ -475,6 +570,7 @@ Tipp: -- als eigene Zeile = manueller Folientrenner."></textarea>
       <div class="panel-label">
         🌐 Übersetzung
         <span class="lang-badge" id="badge2"></span>
+        <button id="autoTranslateBtn">✨ KI-Übersetzung</button>
       </div>
       <textarea id="translation" placeholder="Übersetzung hier einfügen…
 
@@ -525,6 +621,25 @@ Labels werden automatisch erkannt und übersprungen."></textarea>
   </div>
 </div>
 
+<!-- ── KI-Übersetzung Warn-Dialog ───────────────────────────── -->
+<div class="ai-dialog-overlay" id="aiDialogOverlay">
+  <div class="ai-dialog">
+    <div class="ai-dialog-header">✨ Hinweis zur KI-Übersetzung</div>
+    <div class="ai-dialog-body">
+      <strong>KI-Übersetzungen müssen sorgfältig geprüft werden!</strong>
+      <ul>
+        <li>Der Sinn des Originals muss <strong>vollständig erhalten</strong> bleiben.</li>
+        <li>Jede Zeile mit dem Original <strong>Zeile für Zeile vergleichen</strong>.</li>
+        <li>Im Zweifel einen <strong>Übersetzer in der Gemeinde</strong> fragen.</li>
+      </ul>
+    </div>
+    <div class="ai-dialog-footer">
+      <button id="aiDialogCancel">Abbrechen</button>
+      <button id="aiDialogConfirm">Verstanden — übersetzen</button>
+    </div>
+  </div>
+</div>
+
 <script>
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -540,6 +655,15 @@ const STROPHE_RE = /^(strophe|vers|verse)\s*\d*/i;
 const REFRAIN_RE = /^(refrain|chorus|ref\.?)\s*\d*/i;
 const BRIDGE_RE  = /^bridge/i;
 const BARE_NUM_RE = /^\d+\.?\s*$/;
+const REPEAT_OPEN_RE  = /^I:\s*/i;
+const REPEAT_CLOSE_RE = /\s*:\|?\s*$|:\s*I\s*$/i;
+
+function isRepeatOpen(line)  { return REPEAT_OPEN_RE.test(line.trim()); }
+function isRepeatClose(line) { return REPEAT_CLOSE_RE.test(line.trim()); }
+
+function stripRepeatMarkers(line) {
+  return line.trim().replace(REPEAT_OPEN_RE, '').replace(REPEAT_CLOSE_RE, '').trim();
+}
 
 function isSectionLabel(line) {
   const t = line.trim();
@@ -571,12 +695,48 @@ function parseInput(raw) {
   const rawLines = raw.split('\n');
   const sections = [];
   let current = null;
+  let inRepeat = false;
 
   for (const line of rawLines) {
     const trimmed = line.trim();
 
     if (!trimmed) {
+      if (!inRepeat) {
+        if (current && current.lines.length > 0) { sections.push(current); current = null; }
+      }
+      continue;
+    }
+
+    // Detect repeat block: I: ... :| or I: ... :I  (may span multiple lines)
+    const openOnly  = isRepeatOpen(trimmed) && !isRepeatClose(trimmed);
+    const singleLine = isRepeatOpen(trimmed) && isRepeatClose(trimmed);
+    const closeOnly = !isRepeatOpen(trimmed) && isRepeatClose(trimmed);
+
+    if (singleLine) {
+      // Whole repeat on one line: I: text :I
       if (current && current.lines.length > 0) { sections.push(current); current = null; }
+      const stripped = stripRepeatMarkers(trimmed);
+      if (stripped) sections.push({ type: 'refrain', repeat: true, lines: [stripped] });
+      continue;
+    }
+
+    if (openOnly) {
+      if (current && current.lines.length > 0) { sections.push(current); current = null; }
+      current = { type: 'refrain', repeat: true, lines: [] };
+      const stripped = stripRepeatMarkers(trimmed);
+      if (stripped) current.lines.push(stripped);
+      inRepeat = true;
+      continue;
+    }
+
+    if (inRepeat) {
+      if (closeOnly) {
+        const stripped = stripRepeatMarkers(trimmed);
+        if (stripped) current.lines.push(stripped);
+        sections.push(current); current = null; inRepeat = false;
+      } else {
+        current.lines.push(trimmed);
+      }
       continue;
     }
 
@@ -680,25 +840,40 @@ function format(songRaw, transRaw) {
       contentIdx++;
     }
 
-    return { label, slides: splitIntoSlides(items) };
+    // For repeat sections: prepend |: to first line, append :| to last line
+    if (section.repeat && items.length) {
+      for (let i = 0; i < items.length; i++) {
+        if (Array.isArray(items[i])) { items[i] = ['|: ' + items[i][0], items[i][1]]; break; }
+      }
+      for (let i = items.length - 1; i >= 0; i--) {
+        if (Array.isArray(items[i])) { items[i] = [items[i][0] + ' :|', items[i][1]]; break; }
+      }
+    }
+
+    return { label, slides: splitIntoSlides(items), repeat: !!section.repeat };
   });
 
   const hasExtra = extraTransSections.length > 0;
   const out = []; // { type, text }
 
-  rendered.forEach(({ label, slides }, sIdx) => {
+  rendered.forEach(({ label, slides, repeat }, sIdx) => {
     const isLastSection = sIdx === rendered.length - 1 && !hasExtra;
-    if (label) out.push({ type: 'label', text: label });
-    slides.forEach((slide, slIdx) => {
-      slide.forEach(([primary, secondary]) => {
-        const primaryErr  = primary  === 'LIEDTEXT FEHLT';
-        const secondaryErr = secondary === 'ÜBERSETZUNG FEHLT';
-        out.push({ type: primaryErr  ? 'err' : 'song',  text: primary });
-        out.push({ type: secondaryErr ? 'err' : 'trans', text: secondary });
+
+    const emitSlides = (lbl) => {
+      if (lbl) out.push({ type: 'label', text: lbl });
+      slides.forEach((slide, slIdx) => {
+        slide.forEach(([primary, secondary]) => {
+          const primaryErr   = primary   === 'LIEDTEXT FEHLT';
+          const secondaryErr = secondary === 'ÜBERSETZUNG FEHLT';
+          out.push({ type: primaryErr   ? 'err' : 'song',  text: primary });
+          out.push({ type: secondaryErr ? 'err' : 'trans', text: secondary });
+        });
+        const isLastSlide = slIdx === slides.length - 1;
+        if (!isLastSlide || !isLastSection) out.push({ type: 'sep', text: '--' });
       });
-      const isLastSlide = slIdx === slides.length - 1;
-      if (!isLastSlide || !isLastSection) out.push({ type: 'sep', text: '--' });
-    });
+    };
+
+    emitSlides(label);
   });
 
   if (hasExtra) {
@@ -899,6 +1074,112 @@ instrToggle.addEventListener('click', () => {
     ? '<span class="arrow" style="transform:rotate(90deg)">&#9654;</span> Anleitung verbergen'
     : '<span class="arrow">&#9654;</span> Anleitung anzeigen';
 });
+
+// ─── KI-Übersetzung Dialog ────────────────────────────────────────────────────
+
+const aiDialogOverlay = document.getElementById('aiDialogOverlay');
+
+document.getElementById('autoTranslateBtn').addEventListener('click', () => {
+  aiDialogOverlay.classList.add('open');
+});
+
+document.getElementById('aiDialogCancel').addEventListener('click', () => {
+  aiDialogOverlay.classList.remove('open');
+});
+
+document.getElementById('aiDialogConfirm').addEventListener('click', () => {
+  aiDialogOverlay.classList.remove('open');
+  runAutoTranslate();
+});
+
+aiDialogOverlay.addEventListener('click', (e) => {
+  if (e.target === aiDialogOverlay) aiDialogOverlay.classList.remove('open');
+});
+
+// ─── KI-Übersetzung via Google Translate API ─────────────────────────────────
+
+const GOOGLE_API_KEY = 'AIzaSyAoRYmYKEY51hz3h0TDfeHOgLF22tjUnLE';
+
+async function runAutoTranslate() {
+  const songRaw = document.getElementById('song').value.trim();
+  if (!songRaw) return;
+
+  const btn = document.getElementById('autoTranslateBtn');
+  btn.textContent = '⏳ Übersetze…';
+  btn.disabled = true;
+
+  try {
+    const songContentLines = songRaw.split('\n').map(l => l.trim())
+      .filter(l => l && !isSectionLabel(l) && !isSeparator(l) && !isRepeatOpen(l) && !isRepeatClose(l));
+    const sourceLang = detectLanguage(songContentLines) === 'russian' ? 'ru' : 'de';
+    const targetLang = sourceLang === 'de' ? 'ru' : 'de';
+
+    // Parse into sections — this gives us the clean lines per section,
+    // with repeat markers already stripped, matching exactly what the formatter expects
+    const sections = parseInput(songRaw);
+
+    // Collect all translatable lines across sections, remembering where they belong
+    const toTranslate = []; // { sectionIdx, lineIdx, text }
+    sections.forEach((section, sIdx) => {
+      section.lines.forEach((line, lIdx) => {
+        if (!isSeparator(line)) {
+          toTranslate.push({ sectionIdx: sIdx, lineIdx: lIdx, text: line });
+        }
+      });
+    });
+
+    if (!toTranslate.length) return;
+
+    // Batch translate
+    const response = await fetch(
+      `https://translation.googleapis.com/language/translate/v2?key=${GOOGLE_API_KEY}`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          q: toTranslate.map(l => l.text),
+          source: sourceLang,
+          target: targetLang,
+          format: 'text'
+        })
+      }
+    );
+
+    if (!response.ok) {
+      const err = await response.json();
+      throw new Error(err.error?.message || response.statusText);
+    }
+
+    const data = await response.json();
+    const translations = data.data.translations;
+
+    // Write translated text back into section structure
+    toTranslate.forEach(({ sectionIdx, lineIdx }, i) => {
+      sections[sectionIdx].lines[lineIdx] = translations[i].translatedText;
+    });
+
+    // Reconstruct translation text: one section per block, separated by blank lines
+    // Section labels are omitted (translation textarea doesn't need them — formatter matches by position)
+    const transLines = [];
+    sections.forEach((section, sIdx) => {
+      if (sIdx > 0) transLines.push('');
+      section.lines.forEach(line => transLines.push(line));
+    });
+
+    document.getElementById('translation').value = transLines.join('\n');
+    runFormat();
+
+    statusEl.textContent += '  —  KI-Übersetzung eingefügt, bitte prüfen!';
+    statusEl.className = 'status warn';
+
+  } catch (e) {
+    statusEl.textContent = 'Übersetzungs-Fehler: ' + e.message;
+    statusEl.className = 'status err';
+  } finally {
+    btn.textContent = '✨ KI-Übersetzung';
+    btn.disabled = false;
+  }
+}
 </script>
 </body>
 </html>
