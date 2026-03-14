@@ -1963,10 +1963,26 @@ function cleanOcrText(raw) {
     return line.replace(/(\p{L})\s*-\s*(\p{L})/gu, '$1$2');
   });
 
+  // Pass 3b: Zeilenübergreifende Wort-Trennung reparieren
+  // "Ураган неверья одо-" + "лев." → "Ураган неверья одолев."
+  const cleaned3 = [];
+  for (let i = 0; i < cleaned2.length; i++) {
+    const t = cleaned2[i].trimEnd();
+    // Zeile endet mit Buchstabe+Bindestrich und nächste Zeile beginnt mit Kleinbuchstabe
+    if (t.match(/\p{L}-$/u) && i + 1 < cleaned2.length && cleaned2[i + 1].trim().match(/^\p{Ll}/u)) {
+      const joined = t.slice(0, -1) + cleaned2[i + 1].trim();
+      console.log(`  Zeilenumbruch-Trennung repariert: "${t}" + "${cleaned2[i + 1].trim()}" → "${joined}"`);
+      cleaned3.push(joined);
+      i++; // nächste Zeile überspringen
+    } else {
+      cleaned3.push(cleaned2[i]);
+    }
+  }
+
   // Pass 4: Fragmentzeilen an Nachbarzeilen anhängen
   const merged = [];
-  for (let i = 0; i < cleaned2.length; i++) {
-    const t = cleaned2[i].trim();
+  for (let i = 0; i < cleaned3.length; i++) {
+    const t = cleaned3[i].trim();
 
     if (!t) {
       merged.push('');
@@ -1983,7 +1999,7 @@ function cleanOcrText(raw) {
       }
     }
 
-    merged.push(cleaned2[i]);
+    merged.push(cleaned3[i]);
   }
 
   // Pass 5: Doppelte/wiederholte erste Zeilen entfernen
