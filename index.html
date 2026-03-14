@@ -1016,9 +1016,9 @@ function isSeparator(line) {
   return /^-{2,}\s*$/.test(line.trim());
 }
 
-const STROPHE_RE = /^(strophe|vers|verse|куплет)\s*\d*/i;
-const REFRAIN_RE = /^(refrain|chorus|ref\.?|припев)\s*\d*/i;
-const BRIDGE_RE  = /^(bridge|мост)/i;
+const STROPHE_RE = /^(strophe|vers|verse|куплет)\s*\d*:?\s*$/i;
+const REFRAIN_RE = /^(refrain|chorus|ref\.?|припев)\s*\d*:?\s*$/i;
+const BRIDGE_RE  = /^(bridge|мост)\s*:?\s*$/i;
 const BARE_NUM_RE = /^\d+\.?\s*$/;
 const REPEAT_OPEN_RE  = /^I:\s*/i;
 const REPEAT_CLOSE_RE = /\s*:\|?\s*$|:\s*I\s*$/i;
@@ -1914,6 +1914,12 @@ function cleanOcrText(raw) {
   const lines = raw.split('\n');
   console.log(`Eingang: ${lines.length} Zeilen`);
 
+  // Pass 0: Liednummer am Anfang entfernen (z.B. "202" als alleinige erste Zeile)
+  if (lines.length > 1 && /^\d{1,4}\s*$/.test(lines[0].trim())) {
+    console.log(`  Liednummer entfernt: "${lines[0].trim()}"`);
+    lines.shift();
+  }
+
   // Pass 1: Akkorde und OCR-Artefakte entfernen
   const cleaned1 = [];
   let removedChords = 0;
@@ -1933,14 +1939,31 @@ function cleanOcrText(raw) {
     }
   }
 
-  // Pass 2: Silbentrennung innerhalb Zeilen reparieren: "Гос-по-ди" → "Господи"
-  const cleaned2 = cleaned1.map(line => {
+  // Pass 2: Inline Section-Labels abtrennen
+  // z.B. "Припев: В грех упал, Пусть..." → "Припев:" + "В грех упал, Пусть..."
+  // z.B. "Refrain Zeile eins..." → "Refrain" + "Zeile eins..."
+  const INLINE_LABEL_RE = /^((?:strophe|vers|verse|куплет|refrain|chorus|ref\.?|припев|bridge|мост)\s*\d*:?)\s+(.+)$/i;
+  const cleaned1b = [];
+  for (const line of cleaned1) {
+    const m = line.trim().match(INLINE_LABEL_RE);
+    if (m) {
+      console.log(`  Inline-Label abgetrennt: "${m[1]}" | "${m[2]}"`);
+      cleaned1b.push(m[1]);
+      cleaned1b.push(m[2]);
+    } else {
+      cleaned1b.push(line);
+    }
+  }
+
+  // Pass 3: Silbentrennung innerhalb Zeilen reparieren: "Гос-по-ди" → "Господи"
+  const cleaned2 = cleaned1b.map(line => {
+    // Section labels nicht anfassen
+    if (isSectionLabel(line.trim())) return line;
     // Bindestriche zwischen Silben (Buchstabe-Bindestrich-Buchstabe) zusammenfügen
-    // Aber "Я Тебя буду ждать -" am Zeilenende behalten (wird in Pass 3 behandelt)
     return line.replace(/(\p{L})\s*-\s*(\p{L})/gu, '$1$2');
   });
 
-  // Pass 3: Fragmentzeilen an Nachbarzeilen anhängen
+  // Pass 4: Fragmentzeilen an Nachbarzeilen anhängen
   const merged = [];
   for (let i = 0; i < cleaned2.length; i++) {
     const t = cleaned2[i].trim();
@@ -1953,7 +1976,7 @@ function cleanOcrText(raw) {
     if (isFragment(t) && merged.length > 0) {
       // An die letzte nicht-leere Zeile anhängen
       const lastIdx = merged.length - 1;
-      if (merged[lastIdx].trim()) {
+      if (merged[lastIdx].trim() && !isSectionLabel(merged[lastIdx].trim())) {
         console.log(`  Fragment zusammengefügt: "${merged[lastIdx].trim()}" + "${t}"`);
         merged[lastIdx] = merged[lastIdx].trimEnd() + t;
         continue;
@@ -1963,8 +1986,7 @@ function cleanOcrText(raw) {
     merged.push(cleaned2[i]);
   }
 
-  // Pass 4: Doppelte/wiederholte erste Zeilen entfernen
-  // OCR liest manchmal den Titel zweimal (einmal groß, einmal als erste Strophenzeile)
+  // Pass 5: Doppelte/wiederholte erste Zeilen entfernen
   if (merged.length >= 2) {
     const a = merged[0]?.trim().replace(/^\d+\.\s*/, '');
     const b = merged[1]?.trim().replace(/^\d+\.\s*/, '');
@@ -1974,13 +1996,28 @@ function cleanOcrText(raw) {
     }
   }
 
-  // Pass 5: Mehrfache Leerzeilen auf eine reduzieren
+  // Pass 6: Strophen-Nummern als Abschnitt-Trenner setzen
+  // "2. Покаянья нету..." → Leerzeile davor einfügen (damit parseInput es als neuen Abschnitt erkennt)
+  const withBreaks = [];
+  for (let i = 0; i < merged.length; i++) {
+    const t = merged[i].trim();
+    // Nummerierte Strophe "2.", "3." etc. → Leerzeile davor wenn nicht schon vorhanden
+    if (/^\d+\.\s/.test(t) && i > 0 && merged[i - 1]?.trim() !== '') {
+      withBreaks.push('');
+    }
+    // Section label → Leerzeile davor
+    if (isSectionLabel(t) && i > 0 && merged[i - 1]?.trim() !== '') {
+      withBreaks.push('');
+    }
+    withBreaks.push(merged[i]);
+  }
+
+  // Pass 7: Mehrfache Leerzeilen auf eine reduzieren
   const final = [];
-  for (const line of merged) {
+  for (const line of withBreaks) {
     if (line.trim() === '' && final.length > 0 && final[final.length - 1].trim() === '') continue;
     final.push(line);
   }
-  // Führende/abschließende Leerzeilen entfernen
   while (final.length && !final[0].trim()) final.shift();
   while (final.length && !final[final.length - 1].trim()) final.pop();
 
