@@ -837,14 +837,14 @@
         🎼 Liedtext (Original)
         <span class="lang-badge" id="badge1"></span>
         <button id="importBtn">📂 Datei öffnen</button>
-        <input type="file" id="importFile" accept=".txt,.docx,.pdf" style="display:none">
+        <input type="file" id="importFile" accept=".txt,.docx,.pdf,.png,.jpg,.jpeg,.webp,.bmp,.gif,.tiff,.tif" style="display:none">
       </div>
       <div class="textarea-wrap">
         <textarea id="song" placeholder=" "></textarea>
         <div class="textarea-overlay" id="songOverlay">
           <div class="overlay-icon">📄</div>
           <div class="overlay-text">Text einfügen, eintippen<br>oder <strong>Datei hierher ziehen</strong></div>
-          <div class="overlay-hint">TXT · Word · PDF</div>
+          <div class="overlay-hint">TXT · Word · PDF · Bild</div>
           <pre class="overlay-example">Strophe 1
 Zeile 1
 Zeile 2
@@ -1729,9 +1729,27 @@ async function extractTextFromFile(file) {
     return text;
   }
 
+  const imageExts = ['png', 'jpg', 'jpeg', 'webp', 'bmp', 'gif', 'tiff', 'tif'];
+  if (imageExts.includes(ext) || file.type.startsWith('image/')) {
+    console.log('Bild erkannt, starte OCR via Vision API…');
+    statusEl.textContent = '🔍 OCR läuft…';
+    statusEl.className = 'status';
+    const startTime = performance.now();
+    const buf = await file.arrayBuffer();
+    const base64 = btoa(new Uint8Array(buf).reduce((s, b) => s + String.fromCharCode(b), ''));
+    console.log(`  Base64-Länge: ${base64.length} Zeichen (~${(base64.length * 0.75 / 1024 / 1024).toFixed(2)} MB)`);
+    const text = await ocrWithVisionAPI(base64);
+    const duration = ((performance.now() - startTime) / 1000).toFixed(1);
+    console.log(`  OCR fertig in ${duration}s — ${text.length} Zeichen erkannt`);
+    if (text) console.log(`  Ergebnis:\n${text}`);
+    else console.warn('  Kein Text erkannt!');
+    console.groupEnd();
+    return text;
+  }
+
   console.error('Nicht unterstützte Endung:', ext);
   console.groupEnd();
-  throw new Error('Nur .txt, .docx und .pdf werden unterstützt');
+  throw new Error('Nur TXT, Word, PDF und Bilder werden unterstützt');
 }
 
 // ─── PDF Text-Extraktion (erst digital, dann OCR Fallback) ────────────────────
