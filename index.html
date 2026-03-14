@@ -1739,12 +1739,13 @@ async function extractTextFromFile(file) {
     const base64 = btoa(new Uint8Array(buf).reduce((s, b) => s + String.fromCharCode(b), ''));
     console.log(`  Base64-Länge: ${base64.length} Zeichen (~${(base64.length * 0.75 / 1024 / 1024).toFixed(2)} MB)`);
     const text = await ocrWithVisionAPI(base64);
+    const cleaned = cleanOcrText(text);
     const duration = ((performance.now() - startTime) / 1000).toFixed(1);
-    console.log(`  OCR fertig in ${duration}s — ${text.length} Zeichen erkannt`);
-    if (text) console.log(`  Ergebnis:\n${text}`);
+    console.log(`  OCR fertig in ${duration}s — ${text.length} Zeichen roh, ${cleaned.length} Zeichen bereinigt`);
+    if (cleaned) console.log(`  Bereinigtes Ergebnis:\n${cleaned}`);
     else console.warn('  Kein Text erkannt!');
     console.groupEnd();
-    return text;
+    return cleaned;
   }
 
   console.error('Nicht unterstützte Endung:', ext);
@@ -1802,12 +1803,13 @@ async function extractTextFromPDF(file) {
 
       console.log(`    Sende an Vision API…`);
       const startTime = performance.now();
-      const ocrText = await ocrWithVisionAPI(imageBase64);
+      const ocrRaw = await ocrWithVisionAPI(imageBase64);
+      const ocrText = cleanOcrText(ocrRaw);
       const duration = ((performance.now() - startTime) / 1000).toFixed(1);
       ocrCount++;
 
-      console.log(`    OCR fertig in ${duration}s — ${ocrText.length} Zeichen erkannt`);
-      if (ocrText) console.log(`    Ergebnis:\n${ocrText}`);
+      console.log(`    OCR fertig in ${duration}s — ${ocrRaw.length} roh, ${ocrText.length} bereinigt`);
+      if (ocrText) console.log(`    Bereinigtes Ergebnis:\n${ocrText}`);
       else console.warn(`    Kein Text erkannt!`);
       console.groupEnd();
 
@@ -1867,6 +1869,95 @@ async function renderPageToBase64(page) {
   await page.render({ canvasContext: ctx, viewport }).promise;
   // Return base64 without the data:image/... prefix
   return canvas.toDataURL('image/png').replace(/^data:image\/png;base64,/, '');
+}
+
+// ─── OCR Text Cleanup (Akkorde entfernen, Silben zusammenfügen) ───────────────
+
+// Erkennt reine Akkord-Zeilen: H7, E7, Am, fis7/a, Dm7, C#m, Bb, etc.
+const CHORD_LINE_RE = /^[A-Ha-h][#b♯♭]?(?:m|maj|min|dim|aug|sus|add)?[0-9]?(?:\/[A-Ha-h][#b♯♭]?)?\s*$/;
+const MULTI_CHORD_RE = /^(?:[A-Ha-h][#b♯♭]?(?:m|maj|min|dim|aug|sus|add)?[0-9]*(?:\/[A-Ha-h][#b♯♭]?)?[\s,]+)*[A-Ha-h][#b♯♭]?(?:m|maj|min|dim|aug|sus|add)?[0-9]*(?:\/[A-Ha-h][#b♯♭]?)?\s*$/;
+
+function isChordLine(line) {
+  const t = line.trim();
+  if (!t) return false;
+  // Keine kyrillischen/deutschen Buchstaben → könnte Akkord sein
+  if (/[\u0400-\u04FF]/.test(t) || /[äöüßÄÖÜ]/.test(t)) return false;
+  // Einzelner Akkord
+  if (CHORD_LINE_RE.test(t)) return true;
+  // Mehrere Akkorde nebeneinander: "E7  D7  C" oder "fis7/a H7"
+  if (MULTI_CHORD_RE.test(t)) return true;
+  return false;
+}
+
+function cleanOcrText(raw) {
+  console.group('[OCR Cleanup]');
+  const lines = raw.split('\n');
+  console.log(`Eingang: ${lines.length} Zeilen`);
+
+  // 1) Akkord-Zeilen entfernen
+  const withoutChords = [];
+  let removedChords = 0;
+  for (const line of lines) {
+    if (isChordLine(line)) {
+      console.log(`  Akkord entfernt: "${line.trim()}"`);
+      removedChords++;
+    } else {
+      withoutChords.push(line);
+    }
+  }
+
+  // 2) Silbentrennungen zusammenfügen:
+  //    "бу - ду" → "буду", "рас - све-те" → "рассвете"
+  //    Auch: Zeilen die mit "-" enden an nächste Zeile anfügen
+  const merged = [];
+  let carry = '';
+  for (const line of withoutChords) {
+    const t = line.trim();
+    if (!t) {
+      if (carry) { merged.push(carry); carry = ''; }
+      merged.push('');
+      continue;
+    }
+    // Silbentrennung innerhalb einer Zeile: "бу - ду" → "буду"
+    let cleaned = t.replace(/\s*-\s+/g, '').replace(/\s+-\s*/g, '');
+    // Zeile die nur ein "-" ist → überspringen
+    if (cleaned === '-' || cleaned === '') continue;
+
+    if (carry) {
+      cleaned = carry + cleaned;
+      carry = '';
+    }
+
+    // Endet diese Zeile mit "-"? → carry für nächste Zeile
+    if (cleaned.endsWith('-')) {
+      carry = cleaned.slice(0, -1);
+    } else {
+      merged.push(cleaned);
+    }
+  }
+  if (carry) merged.push(carry);
+
+  // 3) Einzelne sehr kurze Fragmente (1-2 Zeichen, keine Zahl/Label) entfernen
+  const result = merged.filter(line => {
+    const t = line.trim();
+    if (!t) return true;
+    if (t.length <= 2 && !/^\d+\.?$/.test(t) && !isSectionLabel(t)) {
+      console.log(`  Fragment entfernt: "${t}"`);
+      return false;
+    }
+    return true;
+  });
+
+  // Mehrfache Leerzeilen auf eine reduzieren
+  const final = [];
+  for (const line of result) {
+    if (line.trim() === '' && final.length > 0 && final[final.length - 1].trim() === '') continue;
+    final.push(line);
+  }
+
+  console.log(`Ausgang: ${final.length} Zeilen (${removedChords} Akkorde entfernt, ${lines.length - final.length} Zeilen total bereinigt)`);
+  console.groupEnd();
+  return final.join('\n');
 }
 
 async function ocrWithVisionAPI(base64Image) {
