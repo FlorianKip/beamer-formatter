@@ -268,8 +268,93 @@
   @media (max-width: 900px) {
     .editor-grid { grid-template-columns: 1fr; }
     .instructions { grid-template-columns: 1fr; }
-    .header { padding: 20px 16px; }
-    .main { padding: 16px; }
+    .header { padding: 16px; }
+    .main { padding: 10px; }
+
+    /* ── Mobile Tabs ── */
+    .mobile-tabs {
+      display: flex;
+      gap: 0;
+      margin-bottom: 10px;
+      border-radius: 8px;
+      overflow: hidden;
+      border: 1px solid var(--ta-border);
+    }
+    .mobile-tab {
+      flex: 1;
+      padding: 10px 0;
+      text-align: center;
+      font-size: 0.78rem;
+      font-weight: 600;
+      cursor: pointer;
+      background: var(--ta-bg);
+      color: var(--btn-color);
+      border: none;
+      border-radius: 0;
+      transition: all 0.15s;
+      letter-spacing: 0;
+      position: relative;
+    }
+    .mobile-tab.active {
+      background: var(--ta-focus);
+      color: var(--bg);
+    }
+    .mobile-tab:hover:not(.active) {
+      background: var(--btn-hover-bg);
+      transform: none;
+    }
+
+    /* Notification dot */
+    .mobile-tab .tab-dot { display: none; }
+
+    /* Ausgabe-Tab pulsiert wenn neue Ausgabe bereit */
+    .mobile-tab.has-update:not(.active) {
+      animation: tab-pulse 1.5s ease-in-out infinite;
+      background: #1a6a3a;
+      color: #b8e6a0;
+    }
+
+    @keyframes tab-pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.6; }
+    }
+    .editor-grid .panel { display: none; }
+    .editor-grid .panel.active { display: flex; }
+
+    /* Panel-Label: Text ausblenden, nur Buttons behalten */
+    .editor-grid .panel .panel-label {
+      font-size: 0;
+      min-height: 0;
+      gap: 4px;
+      justify-content: flex-end;
+    }
+    .editor-grid .panel .panel-label .lang-badge,
+    .editor-grid .panel .panel-label .slide-count { display: none; }
+
+    /* Textarea volle Höhe auf Mobile */
+    .editor-grid .panel textarea,
+    .editor-grid .panel #output-display {
+      height: 55vh;
+    }
+
+    /* Buttons kleiner auf Mobile */
+    .btn-row {
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+    .btn-row button {
+      padding: 7px 14px;
+      font-size: 0.78rem;
+    }
+
+    /* Overlay Text kleiner */
+    .textarea-overlay .overlay-icon { font-size: 1.5rem; }
+    .textarea-overlay .overlay-text { font-size: 0.75rem; }
+    .textarea-overlay .overlay-example { font-size: 0.65rem; }
+  }
+
+  @media (min-width: 901px) {
+    .mobile-tabs { display: none; }
   }
 
   .panel {
@@ -639,6 +724,7 @@
     flex: 1;
     display: flex;
     flex-direction: column;
+    overflow: hidden;
   }
   .textarea-wrap textarea {
     flex: 1;
@@ -739,6 +825,11 @@
 
 <!-- ── Editor ──────────────────────────────────────────────────── -->
 <div class="main">
+  <div class="mobile-tabs" id="mobileTabs">
+    <button class="mobile-tab active" data-panel="0">🎼 Liedtext</button>
+    <button class="mobile-tab" data-panel="1">🌐 Übersetzung</button>
+    <button class="mobile-tab" data-panel="2">✅ Ausgabe</button>
+  </div>
   <div class="editor-grid">
 
     <div class="panel">
@@ -860,6 +951,37 @@ document.getElementById('themeToggle').addEventListener('click', () => {
 });
 // Icon initial setzen
 if (document.body.classList.contains('light')) document.getElementById('themeToggle').textContent = '☀️';
+
+// ─── Mobile Tabs ──────────────────────────────────────────────────────────────
+(function() {
+  const tabs = document.querySelectorAll('.mobile-tab');
+  const panels = document.querySelectorAll('.editor-grid > .panel');
+
+  function activateTab(idx) {
+    tabs.forEach((t, i) => t.classList.toggle('active', i === idx));
+    panels.forEach((p, i) => p.classList.toggle('active', i === idx));
+    // Ausgabe-Tab (idx 2) geöffnet → Highlight entfernen
+    if (idx === 2) {
+      const ot = document.querySelector('.mobile-tab[data-panel="2"]');
+      if (ot) ot.classList.remove('has-update');
+    }
+  }
+
+  tabs.forEach(tab => {
+    tab.addEventListener('click', () => activateTab(Number(tab.dataset.panel)));
+  });
+
+  // Initial: erstes Panel aktiv auf Mobile
+  activateTab(0);
+
+  // Bei Desktop-Resize alle Panels zeigen (CSS handled display, aber class bleibt)
+  const mq = window.matchMedia('(min-width: 901px)');
+  mq.addEventListener('change', () => {
+    if (mq.matches) panels.forEach(p => p.classList.add('active'));
+    else activateTab([...tabs].findIndex(t => t.classList.contains('active')));
+  });
+  if (mq.matches) panels.forEach(p => p.classList.add('active'));
+})();
 
 // ─── Startup-Log ──────────────────────────────────────────────────────────────
 console.log('%c[Beamer Formatierer] App geladen', 'color:#a8d8ea;font-weight:bold;font-size:13px');
@@ -1249,6 +1371,13 @@ function runFormat() {
     const slideCount = lines.filter(l => l.type === 'sep' && l.text === '--').length + 1;
     const slideEl = document.getElementById('slide-count');
     slideEl.textContent = slideCount > 0 ? `— ${slideCount} Folie${slideCount !== 1 ? 'n' : ''}` : '';
+    const slideInfo = slideCount > 0 ? `  •  ${slideCount} Folie${slideCount !== 1 ? 'n' : ''}` : '';
+
+    // Mobile: Ausgabe-Tab hervorheben wenn nicht aktiv
+    const outputTab = document.querySelector('.mobile-tab[data-panel="2"]');
+    if (outputTab && !outputTab.classList.contains('active')) {
+      outputTab.classList.add('has-update');
+    }
 
     const songContentLines = songRaw.split('\n').map(l => l.trim())
       .filter(l => l && !isSectionLabel(l) && !isSeparator(l));
@@ -1258,7 +1387,7 @@ function runFormat() {
     console.log(`[runFormat] ${langLabel} | ${lines.length} Ausgabezeilen | ${missing} Fehler-Zeilen`);
 
     if (missing) {
-      statusEl.textContent = `${langLabel}  •  Formatiert`;
+      statusEl.textContent = `${langLabel}  •  Formatiert${slideInfo}`;
       statusEl.className = 'status warn';
 
       const errRows = buildErrorDetails(songRaw, transRaw);
@@ -1278,7 +1407,7 @@ function runFormat() {
       }).join('');
       errorDetail.style.display = 'block';
     } else {
-      statusEl.textContent = `${langLabel}  •  Formatiert`;
+      statusEl.textContent = `${langLabel}  •  Formatiert${slideInfo}`;
       statusEl.className = 'status ok';
       errorDetail.style.display = 'none';
     }
