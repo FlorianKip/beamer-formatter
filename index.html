@@ -2555,67 +2555,52 @@ document.getElementById('splitBtn').addEventListener('click', () => {
   }
 
   if (contentLines) {
-    // Kompakter Modus: alle Zeilen fortlaufend, abwechselnd DE/RU
-    // Gruppiere in Strophen-Blöcke anhand von Section-Labels oder wenn 4+ Zeilen-Paare zusammen sind
+    // Kompakter Modus: Nutze --- Separatoren als echte Abschnitt-Trenner
+    // Erst den Rohtext in Blöcke aufteilen anhand von --- (nicht anhand von Leerzeilen)
+    const separatorBlocks = raw.split(/^-{2,}\s*$/m).map(b => b.trim()).filter(b => b);
+    console.log(`[Split] ${separatorBlocks.length} Blöcke (getrennt durch ---)`);
+
     const songLines = [];
     const transLines = [];
-    let currentSongBlock = [];
-    let currentTransBlock = [];
-    let pairCount = 0;
 
-    for (let i = 0; i < contentLines.length; i++) {
-      const line = contentLines[i];
+    for (const block of separatorBlocks) {
+      // Alle nicht-leeren Zeilen im Block sammeln (Leerzeilen ignorieren)
+      const lines = block.split('\n').map(l => l.trim()).filter(l => l && !isSeparator(l));
+      if (!lines.length) continue;
 
-      // Section label → neuen Abschnitt beginnen
-      if (isSectionLabel(line)) {
-        if (currentSongBlock.length) {
-          songLines.push(currentSongBlock.join('\n'));
-          transLines.push(currentTransBlock.join('\n'));
-        }
-        currentSongBlock = [];
-        currentTransBlock = [];
-        pairCount = 0;
-        // Label wird nicht mitgenommen (Formatter erzeugt eigene Labels)
-        continue;
-      }
+      const currentSong = [];
+      const currentTrans = [];
 
-      // Nächste Zeile finden (gleiche oder andere Sprache)
-      const isRu = isRussian(line);
-      const nextLine = (i + 1 < contentLines.length && !isSectionLabel(contentLines[i + 1])) ? contentLines[i + 1] : null;
-      const nextIsRu = nextLine ? isRussian(nextLine) : null;
+      for (let i = 0; i < lines.length; i++) {
+        const line = lines[i];
+        if (isSectionLabel(line)) continue;
 
-      // Wenn aktuelle und nächste Zeile verschiedene Sprachen sind → Paar
-      if (nextLine && isRu !== nextIsRu) {
-        if (isRu) {
-          currentSongBlock.push(nextLine);
-          currentTransBlock.push(line);
+        const isRu = isRussian(line);
+        const nextLine = (i + 1 < lines.length && !isSectionLabel(lines[i + 1])) ? lines[i + 1] : null;
+        const nextIsRu = nextLine ? isRussian(nextLine) : null;
+
+        if (nextLine && isRu !== nextIsRu) {
+          if (isRu) {
+            currentSong.push(nextLine);
+            currentTrans.push(line);
+          } else {
+            currentSong.push(line);
+            currentTrans.push(nextLine);
+          }
+          i++;
         } else {
-          currentSongBlock.push(line);
-          currentTransBlock.push(nextLine);
+          currentSong.push(line);
+          currentTrans.push('');
         }
-        pairCount++;
-        i++; // Nächste Zeile überspringen (schon verarbeitet)
+      }
 
-        // Nach 4 Paaren einen Abschnitt abschließen (typische Strophen-Länge)
-        if (pairCount >= 4) {
-          songLines.push(currentSongBlock.join('\n'));
-          transLines.push(currentTransBlock.join('\n'));
-          currentSongBlock = [];
-          currentTransBlock = [];
-          pairCount = 0;
-        }
-      } else {
-        // Einzelne Zeile ohne Paar-Partner
-        currentSongBlock.push(line);
-        currentTransBlock.push('');
+      if (currentSong.length) {
+        songLines.push(currentSong.join('\n'));
+        transLines.push(currentTrans.join('\n'));
       }
     }
 
-    // Restlichen Block abschließen
-    if (currentSongBlock.length) {
-      songLines.push(currentSongBlock.join('\n'));
-      transLines.push(currentTransBlock.join('\n'));
-    }
+    console.log(`[Split] Kompakt-Modus: ${songLines.length} Abschnitte`);
 
     console.log(`[Split] Kompakt-Modus: ${songLines.length} Abschnitte`);
     document.getElementById('song').value = songLines.join('\n\n');
