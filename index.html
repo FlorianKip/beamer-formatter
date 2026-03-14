@@ -1016,9 +1016,9 @@ function isSeparator(line) {
   return /^-{2,}\s*$/.test(line.trim());
 }
 
-const STROPHE_RE = /^(strophe|vers|verse)\s*\d*/i;
-const REFRAIN_RE = /^(refrain|chorus|ref\.?)\s*\d*/i;
-const BRIDGE_RE  = /^bridge/i;
+const STROPHE_RE = /^(strophe|vers|verse|куплет)\s*\d*/i;
+const REFRAIN_RE = /^(refrain|chorus|ref\.?|припев)\s*\d*/i;
+const BRIDGE_RE  = /^(bridge|мост)/i;
 const BARE_NUM_RE = /^\d+\.?\s*$/;
 const REPEAT_OPEN_RE  = /^I:\s*/i;
 const REPEAT_CLOSE_RE = /\s*:\|?\s*$|:\s*I\s*$/i;
@@ -1873,19 +1873,39 @@ async function renderPageToBase64(page) {
 
 // ─── OCR Text Cleanup (Akkorde entfernen, Silben zusammenfügen) ───────────────
 
-// Erkennt reine Akkord-Zeilen: H7, E7, Am, fis7/a, Dm7, C#m, Bb, etc.
-const CHORD_LINE_RE = /^[A-Ha-h][#b♯♭]?(?:m|maj|min|dim|aug|sus|add)?[0-9]?(?:\/[A-Ha-h][#b♯♭]?)?\s*$/;
-const MULTI_CHORD_RE = /^(?:[A-Ha-h][#b♯♭]?(?:m|maj|min|dim|aug|sus|add)?[0-9]*(?:\/[A-Ha-h][#b♯♭]?)?[\s,]+)*[A-Ha-h][#b♯♭]?(?:m|maj|min|dim|aug|sus|add)?[0-9]*(?:\/[A-Ha-h][#b♯♭]?)?\s*$/;
+// Ein einzelner Akkord: A-H (groß/klein), optional #/b, optional Qualität, optional Zahl, optional /Bass
+const CHORD_TOKEN = /^[A-Ha-h][#b♯♭]?(?:m|maj|min|dim|aug|sus|add|is)?[0-9]{0,2}(?:\/[A-Ha-h][#b♯♭]?)?$/;
 
 function isChordLine(line) {
   const t = line.trim();
   if (!t) return false;
-  // Keine kyrillischen/deutschen Buchstaben → könnte Akkord sein
+  // Enthält kyrillische oder deutsche Sonderzeichen → kein Akkord
   if (/[\u0400-\u04FF]/.test(t) || /[äöüßÄÖÜ]/.test(t)) return false;
-  // Einzelner Akkord
-  if (CHORD_LINE_RE.test(t)) return true;
-  // Mehrere Akkorde nebeneinander: "E7  D7  C" oder "fis7/a H7"
-  if (MULTI_CHORD_RE.test(t)) return true;
+  // In Tokens aufteilen und prüfen ob alle Akkorde sind
+  const tokens = t.split(/[\s,]+/).filter(Boolean);
+  if (!tokens.length) return false;
+  return tokens.every(tok => CHORD_TOKEN.test(tok));
+}
+
+// Erkennt OCR-Artefakte: rein lateinische Großbuchstaben ohne Vokalmuster die kein echtes Wort sind
+// z.B. "BCIO", "MO" — aber nicht "Bridge", "Refrain"
+function isOcrGarbage(line) {
+  const t = line.trim();
+  if (!t || t.length > 6) return false;
+  // Nur Großbuchstaben (lateinisch), kein erkennbares Wort
+  if (/^[A-Z]{2,6}$/.test(t) && !isSectionLabel(t)) return true;
+  return false;
+}
+
+// Erkennt ob eine Zeile ein kurzes Silbenfragment ist (kein vollständiges Wort/Satz)
+function isFragment(line) {
+  const t = line.trim();
+  if (!t) return false;
+  // Section labels und Nummern nicht anfassen
+  if (isSectionLabel(t)) return false;
+  if (/^\d+\./.test(t)) return false;
+  // Kurze Zeile (≤15 Zeichen) ohne Leerzeichen und ohne Satzzeichen am Ende → Fragment
+  if (t.length <= 15 && !/\s/.test(t) && !/[.!?,;:)»"]$/.test(t)) return true;
   return false;
 }
 
@@ -1894,68 +1914,77 @@ function cleanOcrText(raw) {
   const lines = raw.split('\n');
   console.log(`Eingang: ${lines.length} Zeilen`);
 
-  // 1) Akkord-Zeilen entfernen
-  const withoutChords = [];
+  // Pass 1: Akkorde und OCR-Artefakte entfernen
+  const cleaned1 = [];
   let removedChords = 0;
+  let removedGarbage = 0;
   for (const line of lines) {
-    if (isChordLine(line)) {
-      console.log(`  Akkord entfernt: "${line.trim()}"`);
+    const t = line.trim();
+    if (isChordLine(t)) {
+      console.log(`  Akkord entfernt: "${t}"`);
       removedChords++;
+    } else if (isOcrGarbage(t)) {
+      console.log(`  OCR-Artefakt entfernt: "${t}"`);
+      removedGarbage++;
+    } else if (t === '-') {
+      // Alleinstehender Bindestrich → überspringen
     } else {
-      withoutChords.push(line);
+      cleaned1.push(line);
     }
   }
 
-  // 2) Silbentrennungen zusammenfügen:
-  //    "бу - ду" → "буду", "рас - све-те" → "рассвете"
-  //    Auch: Zeilen die mit "-" enden an nächste Zeile anfügen
+  // Pass 2: Silbentrennung innerhalb Zeilen reparieren: "Гос-по-ди" → "Господи"
+  const cleaned2 = cleaned1.map(line => {
+    // Bindestriche zwischen Silben (Buchstabe-Bindestrich-Buchstabe) zusammenfügen
+    // Aber "Я Тебя буду ждать -" am Zeilenende behalten (wird in Pass 3 behandelt)
+    return line.replace(/(\p{L})\s*-\s*(\p{L})/gu, '$1$2');
+  });
+
+  // Pass 3: Fragmentzeilen an Nachbarzeilen anhängen
   const merged = [];
-  let carry = '';
-  for (const line of withoutChords) {
-    const t = line.trim();
+  for (let i = 0; i < cleaned2.length; i++) {
+    const t = cleaned2[i].trim();
+
     if (!t) {
-      if (carry) { merged.push(carry); carry = ''; }
       merged.push('');
       continue;
     }
-    // Silbentrennung innerhalb einer Zeile: "бу - ду" → "буду"
-    let cleaned = t.replace(/\s*-\s+/g, '').replace(/\s+-\s*/g, '');
-    // Zeile die nur ein "-" ist → überspringen
-    if (cleaned === '-' || cleaned === '') continue;
 
-    if (carry) {
-      cleaned = carry + cleaned;
-      carry = '';
+    if (isFragment(t) && merged.length > 0) {
+      // An die letzte nicht-leere Zeile anhängen
+      const lastIdx = merged.length - 1;
+      if (merged[lastIdx].trim()) {
+        console.log(`  Fragment zusammengefügt: "${merged[lastIdx].trim()}" + "${t}"`);
+        merged[lastIdx] = merged[lastIdx].trimEnd() + t;
+        continue;
+      }
     }
 
-    // Endet diese Zeile mit "-"? → carry für nächste Zeile
-    if (cleaned.endsWith('-')) {
-      carry = cleaned.slice(0, -1);
-    } else {
-      merged.push(cleaned);
+    merged.push(cleaned2[i]);
+  }
+
+  // Pass 4: Doppelte/wiederholte erste Zeilen entfernen
+  // OCR liest manchmal den Titel zweimal (einmal groß, einmal als erste Strophenzeile)
+  if (merged.length >= 2) {
+    const a = merged[0]?.trim().replace(/^\d+\.\s*/, '');
+    const b = merged[1]?.trim().replace(/^\d+\.\s*/, '');
+    if (a && b && a === b) {
+      console.log(`  Doppelte erste Zeile entfernt: "${merged[0].trim()}"`);
+      merged.splice(0, 1);
     }
   }
-  if (carry) merged.push(carry);
 
-  // 3) Einzelne sehr kurze Fragmente (1-2 Zeichen, keine Zahl/Label) entfernen
-  const result = merged.filter(line => {
-    const t = line.trim();
-    if (!t) return true;
-    if (t.length <= 2 && !/^\d+\.?$/.test(t) && !isSectionLabel(t)) {
-      console.log(`  Fragment entfernt: "${t}"`);
-      return false;
-    }
-    return true;
-  });
-
-  // Mehrfache Leerzeilen auf eine reduzieren
+  // Pass 5: Mehrfache Leerzeilen auf eine reduzieren
   const final = [];
-  for (const line of result) {
+  for (const line of merged) {
     if (line.trim() === '' && final.length > 0 && final[final.length - 1].trim() === '') continue;
     final.push(line);
   }
+  // Führende/abschließende Leerzeilen entfernen
+  while (final.length && !final[0].trim()) final.shift();
+  while (final.length && !final[final.length - 1].trim()) final.pop();
 
-  console.log(`Ausgang: ${final.length} Zeilen (${removedChords} Akkorde entfernt, ${lines.length - final.length} Zeilen total bereinigt)`);
+  console.log(`Ausgang: ${final.length} Zeilen (${removedChords} Akkorde, ${removedGarbage} Artefakte entfernt, ${lines.length - final.length} Zeilen total bereinigt)`);
   console.groupEnd();
   return final.join('\n');
 }
