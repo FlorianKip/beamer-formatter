@@ -2202,19 +2202,36 @@ async function importFileToSong(file) {
 // ─── Gemini KI-Bereinigung ────────────────────────────────────────────────────
 
 const GEMINI_CLEANUP_PROMPT = `Du bekommst einen OCR-erkannten Liedtext der zerstückelt ist (aus einem Notenblatt gescannt).
-Setze die Zeilen richtig zusammen zu einem sauberen Liedtext. Regeln:
-- Gib NUR den bereinigten Liedtext zurück, KEINE Erklärungen, KEIN Markdown
-- Ändere KEIN EINZIGES Wort — nur Zeilenumbrüche und Zusammensetzung korrigieren
-- Füge getrennte Silben wieder zusammen (z.B. "Gol ga tha" → "Golgatha", "бу ду" → "буду")
-- Entferne Akkord-Symbole (z.B. Am, E7, fis7/a, H7, D7, C)
-- Entferne Copyright-Zeilen und Autorenangaben
-- Entferne Liednummern (z.B. "85" am Ende des Titels)
-- KEINEN Titel erzeugen — beginne direkt mit der ersten Strophe
-- Behalte Section-Labels wie "Припев:", "Refrain", "CHOR:" auf eigener Zeile
-- Der Refrain/Chorus wird nach JEDER Strophe wiederholt, auch wenn er im Original nur einmal steht. Schreibe den Refrain-Text nach jeder Strophe erneut hin.
-- Trenne Abschnitte (Strophen, Refrain) mit genau einer Leerzeile
-- Jede Liedzeile soll eine sinnvolle, vollständige Textzeile sein
-- Nummeriere die Strophen NICHT`;
+Setze die Zeilen richtig zusammen zu einem sauberen Liedtext.
+
+STRIKTE REGELN:
+- Gib NUR den bereinigten Liedtext zurück. KEINE Erklärungen, KEIN Markdown, KEINE Codeblöcke.
+- KEINEN Titel oder Überschrift einfügen. Beginne direkt mit dem Text der ersten Strophe.
+- KEINE Strophennummern (1., 2., 3.) einfügen. Strophen werden nur durch Leerzeilen getrennt.
+- Entferne Akkord-Symbole, Copyright-Zeilen, Autorenangaben und Liednummern komplett.
+- Füge getrennte Silben zusammen (z.B. "Gol - ga - tha" → "Golgatha").
+- Jede Liedzeile soll eine vollständige, sinnvolle Textzeile sein.
+- Trenne Abschnitte (Strophen, Refrain) mit genau EINER Leerzeile.
+
+REFRAIN-REGELN:
+- Schreibe vor den Refrain-Text das Wort "Refrain" auf einer eigenen Zeile.
+- Der Refrain wird nach JEDER Strophe wiederholt. Auch wenn er im Notenblatt nur einmal steht, schreibe ihn nach jeder Strophe erneut hin.
+- Wenn im Original "CHOR:", "Chorus:", "Припев:" steht, ersetze es durch "Refrain".
+
+BEISPIEL-FORMAT:
+Zeile eins der ersten Strophe,
+Zeile zwei der ersten Strophe.
+
+Refrain
+Zeile eins des Refrains,
+Zeile zwei des Refrains.
+
+Zeile eins der zweiten Strophe,
+Zeile zwei der zweiten Strophe.
+
+Refrain
+Zeile eins des Refrains,
+Zeile zwei des Refrains.`;
 
 async function runGeminiCleanup() {
   const songEl = document.getElementById('song');
@@ -2277,13 +2294,27 @@ async function runGeminiCleanup() {
     const candidate = data.candidates?.[0];
     if (!candidate) throw new Error('Keine Antwort von Gemini erhalten');
 
-    const cleanedText = candidate.content?.parts?.map(p => p.text).join('').trim();
-    if (!cleanedText) throw new Error('Leere Antwort von Gemini');
+    const cleanedRaw = candidate.content?.parts?.map(p => p.text).join('').trim();
+    if (!cleanedRaw) throw new Error('Leere Antwort von Gemini');
 
-    console.log(`Ergebnis: ${cleanedText.length} Zeichen (vorher: ${rawText.length})`);
-    console.log('Bereinigter Text:\n' + cleanedText);
+    // Nachbearbeitung: Gemini hält sich nicht immer an alle Regeln
+    const postProcessed = cleanedRaw
+      .split('\n')
+      .map(line => {
+        // Strophennummern entfernen: "1. Text" → "Text"
+        return line.replace(/^\d+\.\s+/, '');
+      })
+      .join('\n')
+      // CHOR: / Chorus: durch Refrain ersetzen
+      .replace(/^(CHOR|Chorus|Припев)\s*:?\s*$/gim, 'Refrain')
+      // Markdown Codeblöcke entfernen falls Gemini sie erzeugt
+      .replace(/^```\w*\n?/gm, '').replace(/\n?```$/gm, '')
+      .trim();
 
-    songEl.value = cleanedText;
+    console.log(`Ergebnis: ${postProcessed.length} Zeichen (vorher: ${rawText.length})`);
+    console.log('Bereinigter Text:\n' + postProcessed);
+
+    songEl.value = postProcessed;
     runFormat();
 
     statusEl.textContent += '  —  KI-Bereinigung angewendet';
