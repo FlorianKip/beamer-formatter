@@ -2012,14 +2012,18 @@ function cleanOcrText(raw) {
     }
   }
 
-  // Pass 6: Strophen-Nummern als Abschnitt-Trenner setzen
-  // "2. Покаянья нету..." → Leerzeile davor einfügen (damit parseInput es als neuen Abschnitt erkennt)
+  // Pass 6: Strophen-Nummern als Abschnitt-Trenner setzen und Nummer aus Text entfernen
+  // "2. Покаянья нету..." → Leerzeile davor + "Покаянья нету..."
   const withBreaks = [];
   for (let i = 0; i < merged.length; i++) {
     const t = merged[i].trim();
-    // Nummerierte Strophe "2.", "3." etc. → Leerzeile davor wenn nicht schon vorhanden
-    if (/^\d+\.\s/.test(t) && i > 0 && merged[i - 1]?.trim() !== '') {
-      withBreaks.push('');
+    // Nummerierte Strophe "2.", "3." etc. → Leerzeile davor, Nummer entfernen
+    const numMatch = t.match(/^\d+\.\s+(.+)$/);
+    if (numMatch) {
+      if (i > 0 && merged[i - 1]?.trim() !== '') withBreaks.push('');
+      console.log(`  Strophen-Nummer entfernt: "${t}" → "${numMatch[1]}"`);
+      withBreaks.push(numMatch[1]);
+      continue;
     }
     // Section label → Leerzeile davor
     if (isSectionLabel(t) && i > 0 && merged[i - 1]?.trim() !== '') {
