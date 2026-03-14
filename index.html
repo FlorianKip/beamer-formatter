@@ -1766,9 +1766,17 @@ async function extractTextFromFile(file) {
     const result = await mammoth.extractRawText({ arrayBuffer: buf });
     console.log('mammoth Ergebnis — Zeichen:', result.value.length, '| Warnungen:', result.messages.length);
     if (result.messages.length) console.warn('mammoth Warnungen:', result.messages);
-    console.log('Erste 500 Zeichen:', result.value.slice(0, 500));
+    // mammoth fügt \n\n zwischen Paragraphen ein — für Liedtexte zu viele Leerzeilen
+    // Normalisieren: \n\n → \n, aber --- Separatoren als Abschnitt-Trenner behalten
+    let text = result.value;
+    // Erst: ---/---- Separatoren durch Platzhalter ersetzen
+    text = text.replace(/^(-{2,})\s*$/gm, '\n$1\n');
+    // Dann: doppelte Leerzeilen auf einfache reduzieren
+    text = text.replace(/\n{3,}/g, '\n\n');
+    // Platzhalter zurück: Separator mit Leerzeilen drumherum
+    console.log('DOCX nach Normalisierung — Erste 500 Zeichen:', text.trim().slice(0, 500));
     console.groupEnd();
-    return result.value;
+    return text;
   }
 
   if (ext === 'pdf') {
