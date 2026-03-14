@@ -1372,6 +1372,20 @@ function buildErrorDetails(songRaw, transRaw) {
   return rows;
 }
 
+function detectAlternatingLanguages(raw) {
+  // Prüft ob der Text abwechselnd DE und RU Zeilen hat
+  const lines = raw.split('\n').map(l => l.trim()).filter(l => l && !isSeparator(l) && !isSectionLabel(l));
+  if (lines.length < 4) return false;
+  let switches = 0;
+  let lastRu = isRussian(lines[0]);
+  for (let i = 1; i < lines.length; i++) {
+    const ru = isRussian(lines[i]);
+    if (ru !== lastRu) { switches++; lastRu = ru; }
+  }
+  // Wenn mindestens 60% der Zeilen einen Sprachwechsel haben → alternierend
+  return switches >= (lines.length - 1) * 0.6;
+}
+
 function runFormat() {
   const songRaw  = document.getElementById('song').value;
   const transRaw = document.getElementById('translation').value;
@@ -1387,6 +1401,12 @@ function runFormat() {
     errorDetail.style.display = 'none';
     document.getElementById('slide-count').textContent = '';
     return;
+  }
+
+  // Auto-Erkennung: abwechselnde DE/RU Zeilen → "Zeilen aufteilen" vorschlagen
+  if (!transRaw.trim() && detectAlternatingLanguages(songRaw)) {
+    statusEl.textContent = '💡 Tipp: Klicke "⇅ Zeilen aufteilen" — der Text enthält abwechselnd zwei Sprachen';
+    statusEl.className = 'status warn';
   }
 
   try {
@@ -2508,8 +2528,9 @@ document.getElementById('splitBtn').addEventListener('click', () => {
 
   console.group('[Split] Zeilen aufteilen gestartet');
 
-  // Split into blocks separated by blank lines, process each block separately
-  const blocks = raw.split(/\n{2,}/);
+  // Separator-Zeilen (---, ----) durch Leerzeilen ersetzen, dann nach Leerzeilen splitten
+  const normalized = raw.replace(/^-{2,}\s*$/gm, '');
+  const blocks = normalized.split(/\n{2,}/);
   const songBlocks = [];
   const transBlocks = [];
 
