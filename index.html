@@ -2209,10 +2209,12 @@ Setze die Zeilen richtig zusammen zu einem sauberen Liedtext. Regeln:
 - Entferne Akkord-Symbole (z.B. Am, E7, fis7/a, H7, D7, C)
 - Entferne Copyright-Zeilen und Autorenangaben
 - Entferne Liednummern (z.B. "85" am Ende des Titels)
-- Behalte Section-Labels wie "Припев:", "Refrain", "Strophe", "CHOR:" auf eigener Zeile
+- KEINEN Titel erzeugen — beginne direkt mit der ersten Strophe
+- Behalte Section-Labels wie "Припев:", "Refrain", "CHOR:" auf eigener Zeile
+- Der Refrain/Chorus wird nach JEDER Strophe wiederholt, auch wenn er im Original nur einmal steht. Schreibe den Refrain-Text nach jeder Strophe erneut hin.
 - Trenne Abschnitte (Strophen, Refrain) mit genau einer Leerzeile
 - Jede Liedzeile soll eine sinnvolle, vollständige Textzeile sein
-- Wenn der Text ein Lied mit mehreren Strophen ist, nummeriere die Strophen NICHT`;
+- Nummeriere die Strophen NICHT`;
 
 async function runGeminiCleanup() {
   const songEl = document.getElementById('song');
@@ -2248,7 +2250,7 @@ async function runGeminiCleanup() {
       parts.push({ text: 'Hier ist der OCR-erkannte Rohtext:\n\n' + rawText });
     }
 
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GOOGLE_API_KEY}`;
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-lite:generateContent?key=${GOOGLE_API_KEY}`;
     console.log('Gemini API Request an:', url.replace(GOOGLE_API_KEY, '***'));
 
     const startTime = performance.now();
