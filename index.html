@@ -1897,16 +1897,14 @@ function isOcrGarbage(line) {
   return false;
 }
 
-// Erkennt ob eine Zeile ein kurzes Silbenfragment ist (kein vollständiges Wort/Satz)
-function isFragment(line) {
+// Erkennt ob eine Zeile ein OCR-Artefakt ist das entfernt werden sollte
+// Einzelne Buchstaben/Zeichen die keine Section-Labels oder Nummern sind
+function isOcrSingleChar(line) {
   const t = line.trim();
-  if (!t) return false;
-  // Section labels und Nummern nicht anfassen
+  if (!t || t.length > 2) return false;
   if (isSectionLabel(t)) return false;
-  if (/^\d+\./.test(t)) return false;
-  // Kurze Zeile (≤15 Zeichen) ohne Leerzeichen und ohne Satzzeichen am Ende → Fragment
-  if (t.length <= 15 && !/\s/.test(t) && !/[.!?,;:)»"]$/.test(t)) return true;
-  return false;
+  if (/^\d+\.?$/.test(t)) return false;
+  return true;
 }
 
 function cleanOcrText(raw) {
@@ -1979,7 +1977,7 @@ function cleanOcrText(raw) {
     }
   }
 
-  // Pass 4: Fragmentzeilen an Nachbarzeilen anhängen
+  // Pass 4: Einzelne Buchstaben-Artefakte entfernen (z.B. "с", "а", "MO")
   const merged = [];
   for (let i = 0; i < cleaned3.length; i++) {
     const t = cleaned3[i].trim();
@@ -1989,14 +1987,9 @@ function cleanOcrText(raw) {
       continue;
     }
 
-    if (isFragment(t) && merged.length > 0) {
-      // An die letzte nicht-leere Zeile anhängen
-      const lastIdx = merged.length - 1;
-      if (merged[lastIdx].trim() && !isSectionLabel(merged[lastIdx].trim())) {
-        console.log(`  Fragment zusammengefügt: "${merged[lastIdx].trim()}" + "${t}"`);
-        merged[lastIdx] = merged[lastIdx].trimEnd() + t;
-        continue;
-      }
+    if (isOcrSingleChar(t) || isOcrGarbage(t)) {
+      console.log(`  Artefakt entfernt: "${t}"`);
+      continue;
     }
 
     merged.push(cleaned3[i]);
