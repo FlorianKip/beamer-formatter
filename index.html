@@ -7,17 +7,144 @@
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
 
+  :root {
+    --bg: #1a1a2e;
+    --text: #eee;
+    --header-bg: linear-gradient(135deg, #0f3460 0%, #1a1a2e 100%);
+    --header-border: #2d3561;
+    --title-color: #a8d8ea;
+    --sub-color: #6a8a9a;
+    --instr-bg: #16213e;
+    --instr-border: #2d3561;
+    --instr-text: #99b0c0;
+    --instr-num-bg: #0f3460;
+    --instr-num-border: #a8d8ea44;
+    --instr-num-color: #a8d8ea;
+    --instr-strong: #c8e8f5;
+    --instr-code-bg: #0a2540;
+    --instr-code-color: #7ec8e3;
+    --panel-label: #aaa;
+    --badge-de-bg: #1e4d6e; --badge-de-color: #7ec8e3;
+    --badge-ru-bg: #4d1e1e; --badge-ru-color: #e37e7e;
+    --ta-bg: #16213e;
+    --ta-color: #e0e0e0;
+    --ta-border: #2d3561;
+    --ta-focus: #a8d8ea;
+    --out-bg: #0a2540;
+    --out-border: #1a4060;
+    --out-label: #f0c060;
+    --out-song: #7ec8e3;
+    --out-trans: #b8e6a0;
+    --out-sep: #3a5a7a;
+    --out-err: #e37e7e;
+    --legend-color: #666;
+    --btn-border: #2d3561;
+    --btn-color: #6a8a9a;
+    --btn-hover-bg: #1e2a3a;
+    --btn-hover-color: #a8d8ea;
+    --status-color: #888;
+    --err-box-border: #7a5500;
+    --err-box-bg: #1a1200;
+    --err-header-bg: #6b4a00;
+    --err-header-color: #f5d580;
+    --err-row-bg: #1a1500;
+    --err-row-border: #5a4000;
+    --err-hint: #8a7040;
+    --translate-color: #8a6ec0;
+    --translate-border: #4a3570;
+    --translate-hover-bg: #1e1430;
+    --dialog-bg: #16213e;
+    --dialog-header-bg: #2a1a50;
+    --dialog-header-color: #b89ee0;
+    --dialog-body-color: #b0b8cc;
+    --dialog-strong: #e0d0ff;
+    --dialog-footer-border: #2d3561;
+    --overlay-border: #2d3561;
+    --overlay-text: #6a8a9a;
+    --overlay-strong: #a8d8ea;
+    --overlay-hint: #4a5a6a;
+    --overlay-example: #3a4a5a;
+    --overlay-drag-bg: rgba(168,216,234,0.05);
+    --mini-btn-border: #2a3040;
+    --debug-color: #3a4a5a;
+    --debug-border: #2a3040;
+  }
+
+  body.light {
+    --bg: #f0f2f5;
+    --text: #222;
+    --header-bg: linear-gradient(135deg, #d0e8f5 0%, #f0f2f5 100%);
+    --header-border: #c8d8e8;
+    --title-color: #1a5a8a;
+    --sub-color: #6a8a9a;
+    --instr-bg: #fff;
+    --instr-border: #d0d8e0;
+    --instr-text: #556;
+    --instr-num-bg: #d0e8f5;
+    --instr-num-border: #1a5a8a44;
+    --instr-num-color: #1a5a8a;
+    --instr-strong: #1a3a5a;
+    --instr-code-bg: #e8f0f8;
+    --instr-code-color: #1a6a9a;
+    --panel-label: #556;
+    --badge-de-bg: #d0e8f5; --badge-de-color: #1a5a8a;
+    --badge-ru-bg: #f5d0d0; --badge-ru-color: #8a1a1a;
+    --ta-bg: #fff;
+    --ta-color: #222;
+    --ta-border: #c8d8e8;
+    --ta-focus: #1a5a8a;
+    --out-bg: #f8fafc;
+    --out-border: #c8d8e8;
+    --out-label: #b8860b;
+    --out-song: #1a6a9a;
+    --out-trans: #2a7a2a;
+    --out-sep: #b0c0d0;
+    --out-err: #c03030;
+    --legend-color: #888;
+    --btn-border: #c8d8e8;
+    --btn-color: #556;
+    --btn-hover-bg: #e0e8f0;
+    --btn-hover-color: #1a5a8a;
+    --status-color: #888;
+    --err-box-border: #e0c080;
+    --err-box-bg: #fff8e8;
+    --err-header-bg: #f0d870;
+    --err-header-color: #5a4000;
+    --err-row-bg: #fffaf0;
+    --err-row-border: #e0c080;
+    --err-hint: #8a7040;
+    --translate-color: #6a40b0;
+    --translate-border: #b0a0d0;
+    --translate-hover-bg: #f0e8ff;
+    --dialog-bg: #fff;
+    --dialog-header-bg: #e8e0f8;
+    --dialog-header-color: #5a30a0;
+    --dialog-body-color: #444;
+    --dialog-strong: #5a30a0;
+    --dialog-footer-border: #e0d8e8;
+    --overlay-border: #c8d8e8;
+    --overlay-text: #888;
+    --overlay-strong: #1a5a8a;
+    --overlay-hint: #aaa;
+    --overlay-example: #bbb;
+    --overlay-drag-bg: rgba(26,90,138,0.05);
+    --mini-btn-border: #c8d8e8;
+    --debug-color: #aaa;
+    --debug-border: #c8d8e8;
+  }
+
   body {
     font-family: 'Segoe UI', Arial, sans-serif;
-    background: #1a1a2e;
-    color: #eee;
+    background: var(--bg);
+    color: var(--text);
     min-height: 100vh;
+    transition: background 0.3s, color 0.3s;
   }
 
   /* ── Header ── */
   .header {
-    background: linear-gradient(135deg, #0f3460 0%, #1a1a2e 100%);
-    border-bottom: 1px solid #2d3561;
+    background: var(--header-bg);
+    border-bottom: 1px solid var(--header-border);
     padding: 28px 32px 24px;
   }
 
@@ -36,13 +163,13 @@
   .header-title {
     font-size: 1.6rem;
     font-weight: 700;
-    color: #a8d8ea;
+    color: var(--title-color);
     letter-spacing: 0.5px;
   }
 
   .header-sub {
     font-size: 0.85rem;
-    color: #6a8a9a;
+    color: var(--sub-color);
     margin-bottom: 20px;
     padding-left: 48px;
   }
@@ -54,13 +181,13 @@
     cursor: pointer;
     user-select: none;
     font-size: 0.8rem;
-    color: #6a8a9a;
+    color: var(--sub-color);
     margin-bottom: 0;
     width: fit-content;
     padding: 4px 0;
     transition: color 0.15s;
   }
-  .instructions-toggle:hover { color: #a8d8ea; }
+  .instructions-toggle:hover { color: var(--title-color); }
 
   .instructions-toggle .arrow {
     display: inline-block;
@@ -89,12 +216,12 @@
     display: flex;
     align-items: flex-start;
     gap: 10px;
-    background: #16213e;
-    border: 1px solid #2d3561;
+    background: var(--instr-bg);
+    border: 1px solid var(--instr-border);
     border-radius: 8px;
     padding: 10px 14px;
     font-size: 0.8rem;
-    color: #99b0c0;
+    color: var(--instr-text);
     line-height: 1.5;
   }
 
@@ -102,22 +229,22 @@
     flex-shrink: 0;
     width: 22px;
     height: 22px;
-    background: #0f3460;
-    border: 1px solid #a8d8ea44;
+    background: var(--instr-num-bg);
+    border: 1px solid var(--instr-num-border);
     border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
     font-size: 0.72rem;
     font-weight: 700;
-    color: #a8d8ea;
+    color: var(--instr-num-color);
     margin-top: 1px;
   }
 
-  .instr-item strong { color: #c8e8f5; }
+  .instr-item strong { color: var(--instr-strong); }
   .instr-item code {
-    background: #0a2540;
-    color: #7ec8e3;
+    background: var(--instr-code-bg);
+    color: var(--instr-code-color);
     padding: 1px 5px;
     border-radius: 3px;
     font-size: 0.78rem;
@@ -153,7 +280,7 @@
 
   .panel-label {
     font-size: 0.78rem;
-    color: #aaa;
+    color: var(--panel-label);
     text-transform: uppercase;
     letter-spacing: 0.6px;
     display: flex;
@@ -173,15 +300,15 @@
     opacity: 0;
     transition: opacity 0.25s;
   }
-  .lang-badge.de { background: #1e4d6e; color: #7ec8e3; opacity: 1; }
-  .lang-badge.ru { background: #4d1e1e; color: #e37e7e; opacity: 1; }
+  .lang-badge.de { background: var(--badge-de-bg); color: var(--badge-de-color); opacity: 1; }
+  .lang-badge.ru { background: var(--badge-ru-bg); color: var(--badge-ru-color); opacity: 1; }
 
   textarea {
     width: 100%;
     height: 420px;
-    background: #16213e;
-    color: #e0e0e0;
-    border: 1px solid #2d3561;
+    background: var(--ta-bg);
+    color: var(--ta-color);
+    border: 1px solid var(--ta-border);
     border-radius: 8px;
     padding: 14px;
     font-size: 0.88rem;
@@ -193,7 +320,7 @@
 
   textarea:focus {
     outline: none;
-    border-color: #a8d8ea;
+    border-color: var(--ta-focus);
   }
 
   #output {
@@ -203,8 +330,8 @@
   #output-display {
     width: 100%;
     height: 420px;
-    background: #0a2540;
-    border: 1px solid #1a4060;
+    background: var(--out-bg);
+    border: 1px solid var(--out-border);
     border-radius: 8px;
     padding: 14px;
     font-size: 0.88rem;
@@ -214,28 +341,12 @@
     resize: vertical;
   }
 
-  #output-display .line-label {
-    color: #f0c060;
-    font-weight: 700;
-  }
-  #output-display .line-song {
-    color: #7ec8e3;
-  }
-  #output-display .line-trans {
-    color: #b8e6a0;
-  }
-  #output-display .line-sep {
-    color: #3a5a7a;
-    user-select: none;
-  }
-  #output-display .line-err {
-    color: #e37e7e;
-    font-style: italic;
-  }
-  #output-display .line-empty {
-    min-height: 1.65em;
-    display: block;
-  }
+  #output-display .line-label { color: var(--out-label); font-weight: 700; }
+  #output-display .line-song  { color: var(--out-song); }
+  #output-display .line-trans { color: var(--out-trans); }
+  #output-display .line-sep   { color: var(--out-sep); user-select: none; }
+  #output-display .line-err   { color: var(--out-err); font-style: italic; }
+  #output-display .line-empty { min-height: 1.65em; display: block; }
 
   .output-legend {
     display: flex;
@@ -248,7 +359,7 @@
     display: flex;
     align-items: center;
     gap: 5px;
-    color: #666;
+    color: var(--legend-color);
   }
   .legend-dot {
     width: 8px;
@@ -276,31 +387,24 @@
     letter-spacing: 0.3px;
   }
 
-  #copyBtn {
-    background: #a8d8ea;
-    color: #1a1a2e;
-  }
-  #copyBtn:hover { background: #c8ecf7; transform: translateY(-1px); }
-  #copyBtn.copied { background: #1e6e4a; color: #4caf7d; }
-
   #debugBtn {
     background: transparent;
-    color: #3a4a5a;
-    border: 1px solid #2a3040;
+    color: var(--debug-color);
+    border: 1px solid var(--debug-border);
     font-size: 0.72rem;
     padding: 6px 12px;
     font-weight: 400;
     letter-spacing: 0;
   }
-  #debugBtn:hover { color: #6a8a9a; border-color: #3a4a5a; background: transparent; transform: none; }
-  #debugBtn.copied { color: #6a8a9a; border-color: #3a4a5a; }
+  #debugBtn:hover { color: var(--btn-color); border-color: var(--btn-color); background: transparent; transform: none; }
+  #debugBtn.copied { color: var(--btn-color); border-color: var(--btn-color); }
 
   /* ── Status ── */
   .status {
     text-align: center;
     font-size: 0.8rem;
     min-height: 18px;
-    color: #888;
+    color: var(--status-color);
     margin-top: 6px;
   }
   .status.ok  { color: #5cb85c; }
@@ -311,15 +415,15 @@
   #error-detail {
     display: none;
     margin-top: 14px;
-    border: 1px solid #7a5500;
+    border: 1px solid var(--err-box-border);
     border-radius: 8px;
-    background: #1a1200;
+    background: var(--err-box-bg);
     overflow: hidden;
   }
 
   .err-detail-header {
-    background: #6b4a00;
-    color: #f5d580;
+    background: var(--err-header-bg);
+    color: var(--err-header-color);
     font-size: 0.82rem;
     font-weight: 700;
     padding: 7px 14px;
@@ -337,50 +441,34 @@
     display: flex;
     align-items: flex-start;
     gap: 10px;
-    background: #1a1500;
-    border: 1px solid #5a4000;
+    background: var(--err-row-bg);
+    border: 1px solid var(--err-row-border);
     border-radius: 6px;
     padding: 8px 12px;
     font-size: 0.8rem;
     line-height: 1.5;
   }
 
-  .err-row-icon {
-    font-size: 1rem;
-    flex-shrink: 0;
-    margin-top: 1px;
-  }
-
+  .err-row-icon { font-size: 1rem; flex-shrink: 0; margin-top: 1px; }
   .err-row-content { flex: 1; }
-
-  .err-row-section {
-    color: #f0c060;
-    font-weight: 700;
-    margin-bottom: 2px;
-  }
-
+  .err-row-section { color: var(--out-label); font-weight: 700; margin-bottom: 2px; }
   .err-row-missing-song  { color: #f0ad4e; }
   .err-row-missing-trans { color: #f0ad4e; }
-
-  .err-row-hint {
-    margin-top: 3px;
-    color: #8a7040;
-    font-size: 0.75rem;
-  }
+  .err-row-hint { margin-top: 3px; color: var(--err-hint); font-size: 0.75rem; }
 
   /* ── Clear button ── */
   #clearBtn {
     background: transparent;
-    color: #6a8a9a;
-    border: 1px solid #2d3561;
+    color: var(--btn-color);
+    border: 1px solid var(--btn-border);
   }
-  #clearBtn:hover { background: #1e2a3a; color: #a8d8ea; border-color: #a8d8ea; }
+  #clearBtn:hover { background: var(--btn-hover-bg); color: var(--btn-hover-color); border-color: var(--btn-hover-color); }
 
   /* ── Auto-translate button ── */
   #autoTranslateBtn {
     background: transparent;
-    color: #8a6ec0;
-    border: 1px solid #4a3570;
+    color: var(--translate-color);
+    border: 1px solid var(--translate-border);
     font-size: 0.68rem;
     padding: 0px 8px;
     height: 18px;
@@ -392,7 +480,7 @@
     transition: all 0.18s;
     letter-spacing: 0;
   }
-  #autoTranslateBtn:hover { background: #1e1430; color: #b89ee0; border-color: #7a5ab0; transform: none; }
+  #autoTranslateBtn:hover { background: var(--translate-hover-bg); color: var(--dialog-header-color); border-color: var(--translate-color); transform: none; }
 
   /* ── AI warning dialog ── */
   .ai-dialog-overlay {
@@ -407,8 +495,8 @@
   .ai-dialog-overlay.open { display: flex; }
 
   .ai-dialog {
-    background: #16213e;
-    border: 1px solid #4a3570;
+    background: var(--dialog-bg);
+    border: 1px solid var(--translate-border);
     border-radius: 10px;
     max-width: 440px;
     width: 90%;
@@ -417,11 +505,11 @@
   }
 
   .ai-dialog-header {
-    background: #2a1a50;
+    background: var(--dialog-header-bg);
     padding: 12px 18px;
     font-size: 0.88rem;
     font-weight: 700;
-    color: #b89ee0;
+    color: var(--dialog-header-color);
     display: flex;
     align-items: center;
     gap: 8px;
@@ -430,11 +518,11 @@
   .ai-dialog-body {
     padding: 16px 18px;
     font-size: 0.82rem;
-    color: #b0b8cc;
+    color: var(--dialog-body-color);
     line-height: 1.6;
   }
 
-  .ai-dialog-body strong { color: #e0d0ff; }
+  .ai-dialog-body strong { color: var(--dialog-strong); }
 
   .ai-dialog-body ul {
     margin: 10px 0 0 16px;
@@ -448,28 +536,161 @@
     display: flex;
     justify-content: flex-end;
     gap: 8px;
-    border-top: 1px solid #2d3561;
+    border-top: 1px solid var(--dialog-footer-border);
   }
 
   #aiDialogCancel {
     background: transparent;
-    color: #6a8a9a;
-    border: 1px solid #2d3561;
+    color: var(--btn-color);
+    border: 1px solid var(--btn-border);
     font-size: 0.82rem;
     padding: 6px 16px;
   }
-  #aiDialogCancel:hover { background: #1e2a3a; color: #a8d8ea; border-color: #a8d8ea; }
+  #aiDialogCancel:hover { background: var(--btn-hover-bg); color: var(--btn-hover-color); border-color: var(--btn-hover-color); }
 
   #aiDialogConfirm {
-    background: #2a1a50;
-    color: #b89ee0;
-    border: 1px solid #4a3570;
+    background: var(--dialog-header-bg);
+    color: var(--dialog-header-color);
+    border: 1px solid var(--translate-border);
     font-size: 0.82rem;
     padding: 6px 16px;
   }
-  #aiDialogConfirm:hover { background: #3a2560; color: #d0b8ff; border-color: #7a5ab0; transform: none; }
+  #aiDialogConfirm:hover { background: var(--translate-color); color: #fff; border-color: var(--translate-color); transform: none; }
+
+  /* ── File import button ── */
+  #importBtn {
+    background: transparent;
+    color: var(--btn-color);
+    border: 1px solid var(--mini-btn-border);
+    font-size: 0.68rem;
+    padding: 0px 8px;
+    height: 18px;
+    line-height: 1;
+    font-weight: 400;
+    border-radius: 4px;
+    cursor: pointer;
+    flex-shrink: 0;
+    transition: all 0.18s;
+  }
+  #importBtn:hover { color: var(--btn-hover-color); border-color: var(--btn-color); transform: none; }
+
+  /* ── Split button ── */
+  #splitBtn {
+    background: transparent;
+    color: var(--btn-color);
+    border: 1px solid var(--btn-border);
+  }
+  #splitBtn:hover { background: var(--btn-hover-bg); color: var(--btn-hover-color); border-color: var(--btn-hover-color); }
+
+  .panel-mini-btn {
+    background: transparent;
+    color: var(--btn-color);
+    border: 1px solid var(--mini-btn-border);
+    font-size: 0.68rem;
+    padding: 0px 8px;
+    height: 18px;
+    line-height: 1;
+    font-weight: 400;
+    border-radius: 4px;
+    cursor: pointer;
+    flex-shrink: 0;
+    transition: all 0.18s;
+    letter-spacing: 0;
+  }
+  .panel-mini-btn:hover { color: var(--btn-hover-color); border-color: var(--btn-color); transform: none; }
+  .panel-mini-btn.copied { color: #5cb85c; border-color: #3a5a3a; }
+
+  .slide-count {
+    font-size: 0.68rem;
+    color: var(--sub-color);
+    font-weight: 400;
+    text-transform: none;
+    letter-spacing: 0;
+  }
+
+  /* ── Theme toggle ── */
+  .theme-toggle {
+    background: transparent;
+    border: 1px solid var(--btn-border);
+    color: var(--sub-color);
+    font-size: 1.1rem;
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    transition: all 0.2s;
+    flex-shrink: 0;
+  }
+  .theme-toggle:hover { background: var(--btn-hover-bg); border-color: var(--btn-hover-color); transform: none; }
+
+  /* ── Drag-over highlight ── */
+  .panel textarea.drag-over {
+    border-color: var(--ta-focus);
+    background: var(--btn-hover-bg);
+  }
+
+  /* ── Textarea overlay (empty state) ── */
+  .textarea-wrap {
+    position: relative;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+  }
+  .textarea-wrap textarea {
+    flex: 1;
+  }
+  .textarea-overlay {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    pointer-events: none;
+    border: 2px dashed var(--overlay-border);
+    border-radius: 8px;
+    transition: opacity 0.2s;
+  }
+  .textarea-overlay.hidden { opacity: 0; }
+  .textarea-overlay .overlay-icon { font-size: 2rem; opacity: 0.5; }
+  .textarea-overlay .overlay-text {
+    font-size: 0.82rem;
+    color: var(--overlay-text);
+    text-align: center;
+    line-height: 1.5;
+  }
+  .textarea-overlay .overlay-text strong { color: var(--overlay-strong); }
+  .textarea-overlay .overlay-hint {
+    font-size: 0.7rem;
+    color: var(--overlay-hint);
+  }
+  .textarea-overlay .overlay-example {
+    margin-top: 6px;
+    font-family: 'Courier New', monospace;
+    font-size: 0.72rem;
+    line-height: 1.5;
+    color: var(--overlay-example);
+    text-align: left;
+    border-top: 1px solid var(--overlay-border);
+    padding-top: 8px;
+  }
+  .panel textarea.drag-over + .textarea-overlay {
+    border-color: var(--ta-focus);
+    background: var(--overlay-drag-bg);
+  }
 </style>
 </head>
+<script src="https://cdn.jsdelivr.net/npm/mammoth@1.8.0/mammoth.browser.min.js"></script>
+<script type="module">
+  import * as pdfjsLib from 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.4.168/pdf.min.mjs';
+  pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.4.168/pdf.worker.min.mjs';
+  window.pdfjsLib = pdfjsLib;
+</script>
 <body>
 
 <!-- ── Header ─────────────────────────────────────────────────── -->
@@ -477,6 +698,8 @@
   <div class="header-top">
     <span class="header-icon">🎵</span>
     <span class="header-title">Beamer Formatierer</span>
+    <span style="flex:1"></span>
+    <button id="themeToggle" class="theme-toggle" title="Helles/Dunkles Design">🌙</button>
   </div>
 
   <div class="instructions-toggle" id="instrToggle">
@@ -488,47 +711,27 @@
     <div class="instr-item">
       <div class="instr-num">1</div>
       <div><strong>Liedtext einfügen</strong><br>
-        Original-Liedtext links einfügen. Abschnitte mit einer <strong>Leerzeile</strong> trennen.
-        Optional: Abschnitt mit <code>Strophe 1</code>, <code>Refrain</code> usw. beschriften.</div>
+        Links einfügen oder Datei öffnen (TXT, Word, PDF). Abschnitte mit <strong>Leerzeile</strong> trennen.
+        Optional mit <code>Strophe</code>, <code>Refrain</code> oder <code>Bridge</code> beschriften.</div>
     </div>
 
     <div class="instr-item">
       <div class="instr-num">2</div>
       <div><strong>Übersetzung einfügen</strong><br>
-        Übersetzung in der Mitte einfügen &mdash; gleiche Struktur wie der Liedtext.
-        Abschnitte ebenfalls mit <strong>Leerzeile</strong> trennen. Labels sind optional.</div>
+        In der Mitte einfügen &mdash; gleiche Struktur. Oder <strong>KI-Übersetzung</strong> nutzen (immer prüfen!).</div>
     </div>
 
     <div class="instr-item">
       <div class="instr-num">3</div>
-      <div><strong>Sprache wird erkannt</strong><br>
-        Kyrillische Zeichen = Russisch, lateinische Zeichen = Deutsch.
-        Bei einem <strong>deutschen Lied</strong>: erst DE, dann RU.
-        Bei einem <strong>russischen Lied</strong>: erst RU, dann DE.</div>
+      <div><strong>Ausgabe rechts</strong><br>
+        Erscheint automatisch. Pro Folie max. 3 Zeilenpaare. Kopieren oder als .txt speichern.</div>
     </div>
 
     <div class="instr-item">
-      <div class="instr-num">4</div>
-      <div><strong>Ausgabe &amp; Folien</strong><br>
-        Ausgabe erscheint automatisch rechts. Pro Folie max. <strong>6 Zeilen</strong> (= 3 Zeilenpaare).
-        Folien werden mit <code>--</code> getrennt, das Lied endet mit <code>-----</code>.
-        Mit <code>--</code> im Liedtext kann manuell früher getrennt werden.</div>
-    </div>
-
-    <div class="instr-item">
-      <div class="instr-num">5</div>
-      <div><strong>Abschnittsnamen</strong><br>
-        <code>Strophe 1</code>, <code>Strophe 2</code> &hellip; werden automatisch nummeriert.
-        <code>Refrain 1</code>, <code>Refrain 2</code> &hellip; ebenfalls.
-        Der <strong>letzte Abschnitt</strong> des Liedes (wenn Refrain) erhält automatisch <code>Refrain L</code>.</div>
-    </div>
-
-    <div class="instr-item">
-      <div class="instr-num">6</div>
-      <div><strong>Fehlende Zeilen</strong><br>
-        Hat der Liedtext mehr Zeilen als die Übersetzung, erscheint <code>ÜBERSETZUNG FEHLT</code>.
-        Hat die Übersetzung mehr Zeilen, erscheint <code>LIEDTEXT FEHLT</code>.
-        Zeilen werden <strong>abschnittsweise</strong> abgeglichen &mdash; kein Überlauf in den nächsten Abschnitt.</div>
+      <div class="instr-num">?</div>
+      <div><strong>Tipps</strong><br>
+        <strong>Zeilen aufteilen</strong> trennt abwechselnde DE/RU-Zeilen automatisch.
+        <code>I: Text :|</code> = Wiederholung. <code>--</code> = manueller Folientrenner.</div>
     </div>
 
   </div>
@@ -542,13 +745,18 @@
       <div class="panel-label">
         🎼 Liedtext (Original)
         <span class="lang-badge" id="badge1"></span>
+        <button id="importBtn">📂 Datei öffnen</button>
+        <input type="file" id="importFile" accept=".txt,.docx,.pdf" style="display:none">
       </div>
-      <textarea id="song" placeholder="Liedtext hier einfügen…
-
-Strophe 1
+      <div class="textarea-wrap">
+        <textarea id="song" placeholder=" "></textarea>
+        <div class="textarea-overlay" id="songOverlay">
+          <div class="overlay-icon">📄</div>
+          <div class="overlay-text">Text einfügen, eintippen<br>oder <strong>Datei hierher ziehen</strong></div>
+          <div class="overlay-hint">TXT · Word · PDF</div>
+          <pre class="overlay-example">Strophe 1
 Zeile 1
 Zeile 2
-Zeile 3
 
 Refrain
 Zeile 1
@@ -556,14 +764,9 @@ Zeile 2
 
 Strophe 2
 Zeile 1
-Zeile 2
-
-Refrain
-Zeile 1
-Zeile 2
-
-Tipp: Labels (Strophe / Refrain) sind optional.
-Tipp: -- als eigene Zeile = manueller Folientrenner."></textarea>
+Zeile 2</pre>
+        </div>
+      </div>
     </div>
 
     <div class="panel">
@@ -572,12 +775,15 @@ Tipp: -- als eigene Zeile = manueller Folientrenner."></textarea>
         <span class="lang-badge" id="badge2"></span>
         <button id="autoTranslateBtn">✨ KI-Übersetzung</button>
       </div>
-      <textarea id="translation" placeholder="Übersetzung hier einfügen…
-
-Strophe 1
+      <div class="textarea-wrap">
+        <textarea id="translation" placeholder=" "></textarea>
+        <div class="textarea-overlay" id="translationOverlay">
+          <div class="overlay-icon">🌐</div>
+          <div class="overlay-text">Übersetzung einfügen<br>oder <strong>Datei hierher ziehen</strong></div>
+          <div class="overlay-hint">oder KI-Übersetzung nutzen</div>
+          <pre class="overlay-example">Strophe 1
 Zeile 1 übersetzt
 Zeile 2 übersetzt
-Zeile 3 übersetzt
 
 Refrain
 Zeile 1 übersetzt
@@ -585,18 +791,17 @@ Zeile 2 übersetzt
 
 Strophe 2
 Zeile 1 übersetzt
-Zeile 2 übersetzt
-
-Refrain
-Zeile 1 übersetzt
-Zeile 2 übersetzt
-
-Gleiche Abschnitt-Struktur wie Liedtext.
-Labels werden automatisch erkannt und übersprungen."></textarea>
+Zeile 2 übersetzt</pre>
+        </div>
+      </div>
     </div>
 
     <div class="panel">
-      <div class="panel-label">✅ Ausgabe &mdash; Formatiert</div>
+      <div class="panel-label">✅ Ausgabe &mdash; Formatiert <span id="slide-count" class="slide-count"></span>
+        <span style="flex:1"></span>
+        <button id="copyBtn" class="panel-mini-btn">⎘ Kopieren</button>
+        <button id="exportBtn" class="panel-mini-btn">💾 .txt</button>
+      </div>
       <div id="output-display"></div>
       <textarea id="output" readonly></textarea>
       <div class="output-legend">
@@ -610,7 +815,7 @@ Labels werden automatisch erkannt und übersprungen."></textarea>
   </div>
 
   <div class="btn-row">
-    <button id="copyBtn">⎘ Ausgabe kopieren</button>
+    <button id="splitBtn">⇅ Zeilen aufteilen</button>
     <button id="clearBtn">✕ Leeren</button>
     <button id="debugBtn">🐛 Copy Debug</button>
   </div>
@@ -641,6 +846,44 @@ Labels werden automatisch erkannt und übersprungen."></textarea>
 </div>
 
 <script>
+// ─── Theme ────────────────────────────────────────────────────────────────────
+(function() {
+  const saved = localStorage.getItem('theme');
+  if (saved === 'light') document.body.classList.add('light');
+})();
+
+document.getElementById('themeToggle').addEventListener('click', () => {
+  const isLight = document.body.classList.toggle('light');
+  document.getElementById('themeToggle').textContent = isLight ? '☀️' : '🌙';
+  localStorage.setItem('theme', isLight ? 'light' : 'dark');
+  console.log('[Theme]', isLight ? 'Hell' : 'Dunkel');
+});
+// Icon initial setzen
+if (document.body.classList.contains('light')) document.getElementById('themeToggle').textContent = '☀️';
+
+// ─── Startup-Log ──────────────────────────────────────────────────────────────
+console.log('%c[Beamer Formatierer] App geladen', 'color:#a8d8ea;font-weight:bold;font-size:13px');
+console.log('[Init] User-Agent:', navigator.userAgent);
+console.log('[Init] URL:', location.href);
+console.log('[Init] Protokoll:', location.protocol, '(file:// = lokaler Betrieb, https: = gehostet)');
+console.log('[Init] mammoth.js:', typeof mammoth !== 'undefined' ? 'geladen ✓' : 'NICHT GELADEN ✗');
+console.log('[Init] pdfjsLib:', typeof window.pdfjsLib !== 'undefined' ? 'geladen ✓' : 'noch nicht geladen (async module, kommt gleich)');
+
+// Prüfe pdfjsLib nochmal nach kurzem Delay (Module laden async)
+setTimeout(() => {
+  console.log('[Init] pdfjsLib (nach 2s):', typeof window.pdfjsLib !== 'undefined'
+    ? `geladen ✓ (Version: ${window.pdfjsLib.version || 'unbekannt'})`
+    : 'NICHT GELADEN ✗ — PDF-Import wird nicht funktionieren!');
+}, 2000);
+
+// Globaler Error-Handler für unerwartete Fehler
+window.addEventListener('error', (e) => {
+  console.error('[GLOBAL ERROR]', e.message, '\n  Datei:', e.filename, '\n  Zeile:', e.lineno, ':', e.colno, '\n  Error:', e.error);
+});
+window.addEventListener('unhandledrejection', (e) => {
+  console.error('[UNHANDLED PROMISE REJECTION]', e.reason);
+});
+
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 function isRussian(line) {
@@ -751,6 +994,10 @@ function parseInput(raw) {
   }
 
   if (current && current.lines.length > 0) sections.push(current);
+
+  console.log(`[parseInput] ${rawLines.length} Rohzeilen → ${sections.length} Abschnitte:`,
+    sections.map((s, i) => `[${i}] ${s.type}${s.repeat ? ' (repeat)' : ''}: ${s.lines.length} Zeilen`));
+
   return sections;
 }
 
@@ -794,14 +1041,27 @@ function format(songRaw, transRaw) {
     .filter(l => l && !isSectionLabel(l) && !isSeparator(l));
 
   const songSections = parseInput(songRaw);
-  if (!songSections.length) return [];
+  if (!songSections.length) { console.warn('[format] Keine Abschnitte im Liedtext gefunden'); return []; }
 
   const transSections = parseInput(transRaw);
+
+  console.log(`[format] Song: ${songSections.length} Abschnitte, Translation: ${transSections.length} Abschnitte`);
+  if (songSections.length !== transSections.length) {
+    console.warn(`[format] Abschnitt-Mismatch! Song: ${songSections.length}, Translation: ${transSections.length}`);
+  }
 
   const transPerSection = songSections.map((_, i) => {
     const ts = transSections[i];
     if (!ts) return [];
     return ts.lines.filter(l => !isSeparator(l));
+  });
+
+  songSections.forEach((s, i) => {
+    const songCount = s.lines.filter(l => !isSeparator(l)).length;
+    const transCount = (transPerSection[i] || []).length;
+    if (songCount !== transCount) {
+      console.warn(`[format] Abschnitt ${i} (${s.type}): Song ${songCount} Zeilen vs Translation ${transCount} Zeilen`);
+    }
   });
 
   const extraTransSections = transSections.slice(songSections.length);
@@ -967,6 +1227,7 @@ function runFormat() {
   const songRaw  = document.getElementById('song').value;
   const transRaw = document.getElementById('translation').value;
 
+  updateOverlays();
   updateBadge('song', 'badge1');
   updateBadge('translation', 'badge2');
 
@@ -975,6 +1236,7 @@ function runFormat() {
     statusEl.textContent = '';
     statusEl.className = 'status';
     errorDetail.style.display = 'none';
+    document.getElementById('slide-count').textContent = '';
     return;
   }
 
@@ -982,10 +1244,18 @@ function runFormat() {
     const lines = format(songRaw, transRaw);
     renderOutput(lines);
 
+    // Folienzahl: Anzahl der '--' Separatoren (jeder trennt eine Folie) = Folien - 1, plus die letzte Folie
+    // Das finale '-----' zählt nicht als Folie, also: Anzahl '--' Separatoren (nicht '-----') = Folienanzahl
+    const slideCount = lines.filter(l => l.type === 'sep' && l.text === '--').length + 1;
+    const slideEl = document.getElementById('slide-count');
+    slideEl.textContent = slideCount > 0 ? `— ${slideCount} Folie${slideCount !== 1 ? 'n' : ''}` : '';
+
     const songContentLines = songRaw.split('\n').map(l => l.trim())
       .filter(l => l && !isSectionLabel(l) && !isSeparator(l));
     const langLabel = detectLanguage(songContentLines) === 'russian' ? 'Russisches Lied' : 'Deutsches Lied';
     const missing = lines.filter(l => l.type === 'err').length;
+
+    console.log(`[runFormat] ${langLabel} | ${lines.length} Ausgabezeilen | ${missing} Fehler-Zeilen`);
 
     if (missing) {
       statusEl.textContent = `${langLabel}  •  Formatiert`;
@@ -1013,39 +1283,118 @@ function runFormat() {
       errorDetail.style.display = 'none';
     }
   } catch (e) {
+    console.error('[runFormat] FEHLER:', e);
+    console.error('[runFormat] Stack:', e.stack);
     statusEl.textContent = 'Fehler: ' + e.message;
     statusEl.className = 'status err';
     errorDetail.style.display = 'none';
   }
 }
 
+function updateOverlays() {
+  document.getElementById('songOverlay').classList.toggle('hidden', document.getElementById('song').value.length > 0);
+  document.getElementById('translationOverlay').classList.toggle('hidden', document.getElementById('translation').value.length > 0);
+}
+
 function onInput() {
+  updateOverlays();
   clearTimeout(debounceTimer);
   debounceTimer = setTimeout(runFormat, 180);
 }
 
 document.getElementById('song').addEventListener('input', onInput);
 document.getElementById('translation').addEventListener('input', onInput);
+// Auch bei focus/blur prüfen (z.B. nach programmatischem Setzen)
+document.getElementById('song').addEventListener('focus', updateOverlays);
+document.getElementById('translation').addEventListener('focus', updateOverlays);
+updateOverlays(); // Initial
 
 // ─── Buttons ──────────────────────────────────────────────────────────────────
 
 document.getElementById('copyBtn').addEventListener('click', () => {
-  if (!outputEl.value) return;
+  if (!outputEl.value) { console.log('[Copy] Nichts zu kopieren (Ausgabe leer)'); return; }
+  console.log(`[Copy] Kopiere Ausgabe (${outputEl.value.length} Zeichen)…`);
   navigator.clipboard.writeText(outputEl.value).then(() => {
+    console.log('[Copy] Erfolgreich in Zwischenablage kopiert');
     const btn = document.getElementById('copyBtn');
-    btn.innerHTML = '✓ Kopiert!';
-    btn.className = 'copied';
-    setTimeout(() => { btn.innerHTML = '⎘ Ausgabe kopieren'; btn.className = ''; }, 2000);
+    btn.textContent = '✓ Kopiert';
+    btn.classList.add('copied');
+    setTimeout(() => { btn.textContent = '⎘ Kopieren'; btn.classList.remove('copied'); }, 2000);
+  }).catch(err => {
+    console.error('[Copy] Clipboard-Fehler:', err.message, '(Tipp: clipboard.writeText braucht HTTPS oder localhost)');
   });
 });
 
+document.getElementById('exportBtn').addEventListener('click', () => {
+  if (!outputEl.value) { console.log('[Export] Nichts zu exportieren (Ausgabe leer)'); return; }
+
+  // Erste inhaltliche Zeile des Liedtexts als Dateiname
+  const songRaw = document.getElementById('song').value;
+  const firstLine = songRaw.split('\n').map(l => l.trim())
+    .find(l => l && !isSectionLabel(l) && !isSeparator(l) && !isRepeatOpen(l)) || 'Ausgabe';
+  // Dateiname-sichere Zeichen: Sonderzeichen entfernen, Leerzeichen behalten
+  const safeName = firstLine.replace(/[<>:"/\\|?*]/g, '').trim().slice(0, 80) || 'Ausgabe';
+
+  console.log(`[Export] Speichere als "${safeName}.txt" (${outputEl.value.length} Zeichen)`);
+
+  const blob = new Blob([outputEl.value], { type: 'text/plain;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = safeName + '.txt';
+  a.click();
+  URL.revokeObjectURL(url);
+});
+
+let clearBackup = null;
+let clearTimer = null;
+let clearCountdown = null;
+
 document.getElementById('clearBtn').addEventListener('click', () => {
-  document.getElementById('song').value = '';
-  document.getElementById('translation').value = '';
+  const songEl = document.getElementById('song');
+  const transEl = document.getElementById('translation');
+  const btn = document.getElementById('clearBtn');
+
+  if (clearBackup) {
+    // Undo: Wiederherstellen
+    console.log('[Clear] Undo — Inhalt wiederhergestellt');
+    clearTimeout(clearTimer);
+    clearInterval(clearCountdown);
+    songEl.value = clearBackup.song;
+    transEl.value = clearBackup.trans;
+    clearBackup = null;
+    btn.textContent = '✕ Leeren';
+    runFormat();
+    return;
+  }
+
+  if (!songEl.value && !transEl.value) return;
+
+  console.log('[Clear] Liedtext und Übersetzung geleert (Undo verfügbar)');
+  clearBackup = { song: songEl.value, trans: transEl.value };
+  songEl.value = '';
+  transEl.value = '';
   runFormat();
+
+  let remaining = 10;
+  btn.textContent = `↩ Rückgängig (${remaining}s)`;
+
+  clearCountdown = setInterval(() => {
+    remaining--;
+    if (remaining > 0) {
+      btn.textContent = `↩ Rückgängig (${remaining}s)`;
+    }
+  }, 1000);
+
+  clearTimer = setTimeout(() => {
+    clearInterval(clearCountdown);
+    clearBackup = null;
+    btn.textContent = '✕ Leeren';
+  }, 10000);
 });
 
 document.getElementById('debugBtn').addEventListener('click', () => {
+  console.log('[Debug] Debug-Export gestartet');
   const sep = '='.repeat(60);
   const text = [
     { id: 'song',        label: 'LIEDTEXT (1. Sprache)' },
@@ -1055,11 +1404,15 @@ document.getElementById('debugBtn').addEventListener('click', () => {
     `${sep}\n### ${label} ###\n${sep}\n${document.getElementById(id).value || '(leer)'}`
   ).join('\n\n') + '\n' + sep;
 
+  console.log(`[Debug] Debug-Text Länge: ${text.length} Zeichen`);
   navigator.clipboard.writeText(text).then(() => {
+    console.log('[Debug] Erfolgreich kopiert');
     const btn = document.getElementById('debugBtn');
     btn.innerHTML = '✓ Debug kopiert!';
     btn.className = 'copied';
     setTimeout(() => { btn.innerHTML = '🐛 Copy Debug'; btn.className = ''; }, 2000);
+  }).catch(err => {
+    console.error('[Debug] Clipboard-Fehler:', err.message);
   });
 });
 
@@ -1080,14 +1433,17 @@ instrToggle.addEventListener('click', () => {
 const aiDialogOverlay = document.getElementById('aiDialogOverlay');
 
 document.getElementById('autoTranslateBtn').addEventListener('click', () => {
+  console.log('[Translate] Dialog geöffnet');
   aiDialogOverlay.classList.add('open');
 });
 
 document.getElementById('aiDialogCancel').addEventListener('click', () => {
+  console.log('[Translate] Dialog abgebrochen');
   aiDialogOverlay.classList.remove('open');
 });
 
 document.getElementById('aiDialogConfirm').addEventListener('click', () => {
+  console.log('[Translate] Dialog bestätigt — starte Übersetzung');
   aiDialogOverlay.classList.remove('open');
   runAutoTranslate();
 });
@@ -1104,6 +1460,7 @@ async function runAutoTranslate() {
   const songRaw = document.getElementById('song').value.trim();
   if (!songRaw) return;
 
+  console.group('[Translate] KI-Übersetzung gestartet');
   const btn = document.getElementById('autoTranslateBtn');
   btn.textContent = '⏳ Übersetze…';
   btn.disabled = true;
@@ -1113,10 +1470,13 @@ async function runAutoTranslate() {
       .filter(l => l && !isSectionLabel(l) && !isSeparator(l) && !isRepeatOpen(l) && !isRepeatClose(l));
     const sourceLang = detectLanguage(songContentLines) === 'russian' ? 'ru' : 'de';
     const targetLang = sourceLang === 'de' ? 'ru' : 'de';
+    console.log(`[Translate] Sprache erkannt: ${sourceLang} → ${targetLang}`);
+    console.log(`[Translate] Content-Zeilen (ohne Labels/Separators): ${songContentLines.length}`);
 
     // Parse into sections — this gives us the clean lines per section,
     // with repeat markers already stripped, matching exactly what the formatter expects
     const sections = parseInput(songRaw);
+    console.log(`[Translate] ${sections.length} Abschnitte geparst`);
 
     // Collect all translatable lines across sections, remembering where they belong
     const toTranslate = []; // { sectionIdx, lineIdx, text }
@@ -1128,9 +1488,12 @@ async function runAutoTranslate() {
       });
     });
 
-    if (!toTranslate.length) return;
+    console.log(`[Translate] ${toTranslate.length} Zeilen zur Übersetzung gesammelt`);
+    if (!toTranslate.length) { console.warn('[Translate] Keine Zeilen gefunden!'); console.groupEnd(); return; }
 
     // Batch translate
+    console.log(`[Translate] Sende an Google Translate API (${toTranslate.length} Zeilen, ${sourceLang} → ${targetLang})…`);
+    const translateStart = performance.now();
     const response = await fetch(
       `https://translation.googleapis.com/language/translate/v2?key=${GOOGLE_API_KEY}`,
       {
@@ -1144,14 +1507,27 @@ async function runAutoTranslate() {
         })
       }
     );
+    const translateDuration = ((performance.now() - translateStart) / 1000).toFixed(1);
+    console.log(`[Translate] API Response: ${response.status} ${response.statusText} (${translateDuration}s)`);
 
     if (!response.ok) {
       const err = await response.json();
+      console.error('[Translate] API Fehler-Response:', err);
       throw new Error(err.error?.message || response.statusText);
     }
 
     const data = await response.json();
     const translations = data.data.translations;
+    console.log(`[Translate] ${translations.length} Übersetzungen erhalten`);
+
+    if (translations.length !== toTranslate.length) {
+      console.error(`[Translate] MISMATCH: ${toTranslate.length} gesendet, ${translations.length} erhalten!`);
+    }
+
+    // Log each translation pair
+    toTranslate.forEach(({ text }, i) => {
+      console.log(`  [${i}] "${text}" → "${translations[i]?.translatedText || '???'}"`);
+    });
 
     // Write translated text back into section structure
     toTranslate.forEach(({ sectionIdx, lineIdx }, i) => {
@@ -1166,20 +1542,365 @@ async function runAutoTranslate() {
       section.lines.forEach(line => transLines.push(line));
     });
 
-    document.getElementById('translation').value = transLines.join('\n');
+    const transText = transLines.join('\n');
+    console.log(`[Translate] Übersetzungstext erstellt: ${transText.length} Zeichen, ${transLines.length} Zeilen`);
+
+    document.getElementById('translation').value = transText;
     runFormat();
 
     statusEl.textContent += '  —  KI-Übersetzung eingefügt, bitte prüfen!';
     statusEl.className = 'status warn';
 
   } catch (e) {
+    console.error('[Translate] FEHLER:', e);
+    console.error('[Translate] Stack:', e.stack);
     statusEl.textContent = 'Übersetzungs-Fehler: ' + e.message;
     statusEl.className = 'status err';
   } finally {
     btn.textContent = '✨ KI-Übersetzung';
     btn.disabled = false;
+    console.groupEnd();
   }
 }
+</script>
+
+<script>
+// ─── Datei Import ─────────────────────────────────────────────────────────────
+
+async function extractTextFromFile(file) {
+  const ext = file.name.split('.').pop().toLowerCase();
+  console.group(`[Import] Datei: "${file.name}" (${(file.size / 1024).toFixed(1)} KB, Typ: ${file.type || 'unbekannt'})`);
+  console.log('Erkannte Endung:', ext);
+
+  if (ext === 'txt') {
+    const text = await file.text();
+    console.log('TXT gelesen, Zeichen:', text.length);
+    console.log('Erste 500 Zeichen:', text.slice(0, 500));
+    console.groupEnd();
+    return text;
+  }
+
+  if (ext === 'docx') {
+    if (typeof mammoth === 'undefined') { console.error('mammoth.js nicht verfügbar'); console.groupEnd(); throw new Error('mammoth.js nicht geladen'); }
+    console.log('DOCX erkannt, starte mammoth.extractRawText…');
+    const buf = await file.arrayBuffer();
+    console.log('ArrayBuffer Größe:', buf.byteLength, 'bytes');
+    const result = await mammoth.extractRawText({ arrayBuffer: buf });
+    console.log('mammoth Ergebnis — Zeichen:', result.value.length, '| Warnungen:', result.messages.length);
+    if (result.messages.length) console.warn('mammoth Warnungen:', result.messages);
+    console.log('Erste 500 Zeichen:', result.value.slice(0, 500));
+    console.groupEnd();
+    return result.value;
+  }
+
+  if (ext === 'pdf') {
+    console.log('PDF erkannt, starte extractTextFromPDF…');
+    const text = await extractTextFromPDF(file);
+    console.groupEnd();
+    return text;
+  }
+
+  console.error('Nicht unterstützte Endung:', ext);
+  console.groupEnd();
+  throw new Error('Nur .txt, .docx und .pdf werden unterstützt');
+}
+
+// ─── PDF Text-Extraktion (erst digital, dann OCR Fallback) ────────────────────
+
+async function extractTextFromPDF(file) {
+  if (typeof window.pdfjsLib === 'undefined') {
+    console.error('window.pdfjsLib ist undefined — PDF.js Module noch nicht geladen');
+    throw new Error('PDF.js noch nicht geladen — bitte kurz warten und nochmal versuchen');
+  }
+  console.log('PDF.js Version:', window.pdfjsLib.version || 'unbekannt');
+
+  const buf = await file.arrayBuffer();
+  console.log('PDF ArrayBuffer Größe:', buf.byteLength, 'bytes');
+
+  const pdf = await window.pdfjsLib.getDocument({ data: new Uint8Array(buf) }).promise;
+  const totalPages = pdf.numPages;
+  console.log('PDF geladen — Seiten:', totalPages);
+
+  statusEl.textContent = `📄 PDF wird gelesen (${totalPages} Seite${totalPages > 1 ? 'n' : ''})…`;
+  statusEl.className = 'status';
+
+  const MIN_DIGITAL_CHARS = 10;
+  const allPageTexts = [];
+  let digitalCount = 0;
+  let ocrCount = 0;
+
+  for (let p = 1; p <= totalPages; p++) {
+    const page = await pdf.getPage(p);
+    const content = await page.getTextContent();
+    const rawText = content.items.map(item => item.str).join('').trim();
+
+    if (rawText.length > MIN_DIGITAL_CHARS) {
+      // Digitaler Text vorhanden → rekonstruiere Zeilen
+      const lines = groupTextItemsIntoLines(content.items);
+      const pageText = lines.join('\n');
+      digitalCount++;
+      console.group(`  Seite ${p}/${totalPages}: DIGITAL (${rawText.length} Zeichen, ${lines.length} Zeilen)`);
+      lines.forEach((line, i) => console.log(`    [${i}] "${line}"`));
+      console.groupEnd();
+      statusEl.textContent = `📄 Seite ${p}/${totalPages} — digital extrahiert`;
+      allPageTexts.push(pageText);
+    } else {
+      // Kein/kaum Text → OCR Fallback via Vision API
+      console.group(`  Seite ${p}/${totalPages}: OCR nötig (nur ${rawText.length} digitale Zeichen)`);
+      statusEl.textContent = `🔍 Seite ${p}/${totalPages} — OCR läuft…`;
+
+      console.log(`    Rendere auf Canvas…`);
+      const imageBase64 = await renderPageToBase64(page);
+      console.log(`    Canvas gerendert, Base64-Länge: ${imageBase64.length} Zeichen (~${(imageBase64.length * 0.75 / 1024 / 1024).toFixed(2)} MB)`);
+
+      console.log(`    Sende an Vision API…`);
+      const startTime = performance.now();
+      const ocrText = await ocrWithVisionAPI(imageBase64);
+      const duration = ((performance.now() - startTime) / 1000).toFixed(1);
+      ocrCount++;
+
+      console.log(`    OCR fertig in ${duration}s — ${ocrText.length} Zeichen erkannt`);
+      if (ocrText) console.log(`    Ergebnis:\n${ocrText}`);
+      else console.warn(`    Kein Text erkannt!`);
+      console.groupEnd();
+
+      allPageTexts.push(ocrText);
+    }
+  }
+
+  const result = allPageTexts.join('\n\n');
+  console.log(`[PDF] Fertig — ${totalPages} Seiten: ${digitalCount} digital, ${ocrCount} OCR | ${result.length} Zeichen gesamt`);
+  return result;
+}
+
+function groupTextItemsIntoLines(items) {
+  if (!items.length) { console.log('    [groupTextItemsIntoLines] Keine Items'); return []; }
+  console.log(`    [groupTextItemsIntoLines] ${items.length} Text-Items, Y-Positionen: min=${Math.min(...items.map(i=>i.transform[5])).toFixed(0)} max=${Math.max(...items.map(i=>i.transform[5])).toFixed(0)}`);
+
+  // Sort by vertical position (descending Y = top first in PDF coordinate space)
+  const sorted = items.slice().sort((a, b) => {
+    const dy = b.transform[5] - a.transform[5]; // Y descending
+    if (Math.abs(dy) > 3) return dy;
+    return a.transform[4] - b.transform[4]; // X ascending if same line
+  });
+
+  const lines = [];
+  let currentLine = [];
+  let lastY = sorted[0].transform[5];
+
+  for (const item of sorted) {
+    const y = item.transform[5];
+    if (Math.abs(y - lastY) > 3) {
+      // New line
+      if (currentLine.length) lines.push(currentLine.map(i => i.str).join(''));
+      currentLine = [];
+      lastY = y;
+    }
+    currentLine.push(item);
+  }
+  if (currentLine.length) lines.push(currentLine.map(i => i.str).join(''));
+
+  // Log leere oder verdächtig kurze Zeilen
+  const suspicious = lines.filter((l, i) => l.trim().length === 0 || l.trim().length <= 2);
+  if (suspicious.length) {
+    console.warn(`    [groupTextItemsIntoLines] ${suspicious.length} leere/sehr kurze Zeilen gefunden:`, suspicious);
+  }
+
+  return lines;
+}
+
+async function renderPageToBase64(page) {
+  const scale = 2; // Higher res = better OCR
+  const viewport = page.getViewport({ scale });
+  const canvas = document.createElement('canvas');
+  canvas.width = viewport.width;
+  canvas.height = viewport.height;
+  console.log(`    Canvas: ${canvas.width}x${canvas.height} (scale ${scale})`);
+  const ctx = canvas.getContext('2d');
+  await page.render({ canvasContext: ctx, viewport }).promise;
+  // Return base64 without the data:image/... prefix
+  return canvas.toDataURL('image/png').replace(/^data:image\/png;base64,/, '');
+}
+
+async function ocrWithVisionAPI(base64Image) {
+  const url = `https://vision.googleapis.com/v1/images:annotate?key=${GOOGLE_API_KEY}`;
+  const body = {
+    requests: [{
+      image: { content: base64Image },
+      features: [{ type: 'DOCUMENT_TEXT_DETECTION' }],
+      imageContext: { languageHints: ['de', 'ru'] }
+    }]
+  };
+  console.log('    Vision API Request — URL:', url.replace(GOOGLE_API_KEY, '***'));
+  console.log('    Vision API Request — Features:', body.requests[0].features, '| LanguageHints:', body.requests[0].imageContext.languageHints);
+
+  const response = await fetch(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body)
+  });
+
+  console.log('    Vision API Response — Status:', response.status, response.statusText);
+
+  if (!response.ok) {
+    const err = await response.json();
+    console.error('    Vision API Fehler:', err);
+    throw new Error('Vision API: ' + (err.error?.message || response.statusText));
+  }
+
+  const data = await response.json();
+  const annotation = data.responses[0];
+
+  if (annotation.error) {
+    console.error('    Vision API Annotations-Fehler:', annotation.error);
+    throw new Error('Vision API: ' + annotation.error.message);
+  }
+
+  const fullText = annotation.fullTextAnnotation?.text?.trim() || '';
+  console.log('    Vision API Ergebnis:', fullText.length, 'Zeichen',
+    annotation.fullTextAnnotation?.pages?.length || 0, 'Seiten erkannt');
+  if (annotation.textAnnotations) {
+    console.log('    Erkannte Sprachen:', [...new Set(
+      (annotation.fullTextAnnotation?.pages || []).flatMap(p =>
+        (p.property?.detectedLanguages || []).map(l => l.languageCode)
+      )
+    )].join(', ') || 'unbekannt');
+  }
+
+  return fullText;
+}
+
+// ─── File import entry point ──────────────────────────────────────────────────
+
+async function importFileToSong(file) {
+  if (!file) return;
+  console.log('[Import] importFileToSong gestartet für:', file.name);
+
+  try {
+    const startTime = performance.now();
+    const text = await extractTextFromFile(file);
+    const duration = ((performance.now() - startTime) / 1000).toFixed(1);
+    console.log(`[Import] Fertig in ${duration}s — ${text.trim().length} Zeichen extrahiert`);
+    document.getElementById('song').value = text.trim();
+    runFormat();
+    statusEl.textContent += '  —  Datei importiert: ' + file.name;
+  } catch (e) {
+    console.error('[Import] FEHLER:', e);
+    statusEl.textContent = 'Import-Fehler: ' + e.message;
+    statusEl.className = 'status err';
+  }
+}
+
+// File-Button
+document.getElementById('importBtn').addEventListener('click', () => {
+  console.log('[Import] Datei-Dialog geöffnet');
+  document.getElementById('importFile').click();
+});
+document.getElementById('importFile').addEventListener('change', (e) => {
+  const file = e.target.files[0];
+  console.log('[Import] Datei ausgewählt via Button:', file?.name || '(keine)');
+  importFileToSong(file);
+  e.target.value = ''; // reset so same file can be re-imported
+});
+
+// Drag & Drop auf beide Textareas
+['song', 'translation'].forEach(id => {
+  const ta = document.getElementById(id);
+
+  ta.addEventListener('dragover', (e) => {
+    e.preventDefault();
+    ta.classList.add('drag-over');
+  });
+  ta.addEventListener('dragleave', () => ta.classList.remove('drag-over'));
+  ta.addEventListener('drop', async (e) => {
+    e.preventDefault();
+    ta.classList.remove('drag-over');
+    const file = e.dataTransfer.files[0];
+    if (!file) return;
+    console.log(`[Import] Datei per Drag & Drop auf #${id}:`, file.name, `(${(file.size / 1024).toFixed(1)} KB)`);
+    try {
+      const text = await extractTextFromFile(file);
+      ta.value = text.trim();
+      runFormat();
+    } catch (err) {
+      console.error(`[Import] Drag & Drop Fehler auf #${id}:`, err);
+      statusEl.textContent = 'Import-Fehler: ' + err.message;
+      statusEl.className = 'status err';
+    }
+  });
+});
+
+// ─── Zeilen aufteilen ─────────────────────────────────────────────────────────
+
+document.getElementById('splitBtn').addEventListener('click', () => {
+  const raw = document.getElementById('song').value.trim();
+  if (!raw) return;
+
+  console.group('[Split] Zeilen aufteilen gestartet');
+
+  // Split into blocks separated by blank lines, process each block separately
+  const blocks = raw.split(/\n{2,}/);
+  const songBlocks = [];
+  const transBlocks = [];
+
+  console.log(`[Split] ${blocks.length} Blöcke erkannt`);
+
+  for (const block of blocks) {
+    const lines = block.split('\n').map(l => l.trim()).filter(l => l);
+    if (lines.length === 0) continue;
+
+    // If first line is a section label, keep it as header for both sides
+    let header = '';
+    let contentLines = lines;
+    if (isSectionLabel(lines[0]) || isSeparator(lines[0])) {
+      header = lines[0];
+      contentLines = lines.slice(1);
+    }
+
+    console.log(`  Block: ${lines.length} Zeilen, Header: "${header || '(keiner)'}", Content: ${contentLines.length} Zeilen`);
+
+    // Check if block looks alternating: odd lines one lang, even lines another
+    const odds  = contentLines.filter((_, i) => i % 2 === 0);
+    const evens = contentLines.filter((_, i) => i % 2 === 1);
+
+    if (evens.length === 0) {
+      // Single-language block — put entirely in song
+      console.log(`    → Einsprachig (nur ungerade Zeilen), komplett in Song`);
+      songBlocks.push(header ? [header, ...contentLines].join('\n') : contentLines.join('\n'));
+      transBlocks.push('');
+      continue;
+    }
+
+    // Detect which set is which language
+    const oddsLang  = detectLanguage(odds);
+    const evensLang = detectLanguage(evens);
+    console.log(`    Ungerade Zeilen (${odds.length}): ${oddsLang} | Gerade Zeilen (${evens.length}): ${evensLang}`);
+
+    let songLines, transLines;
+    if (oddsLang === 'german' && evensLang === 'russian') {
+      songLines = odds; transLines = evens;
+    } else if (oddsLang === 'russian' && evensLang === 'german') {
+      songLines = odds; transLines = evens;
+    } else {
+      // Same language or unclear — treat odd as song, even as translation
+      console.warn(`    → Gleiche Sprache oder unklar (${oddsLang}/${evensLang}), nutze Reihenfolge`);
+      songLines = odds; transLines = evens;
+    }
+
+    console.log(`    → Song: ${songLines.length} Zeilen, Trans: ${transLines.length} Zeilen`);
+    songBlocks.push(header ? [header, ...songLines].join('\n') : songLines.join('\n'));
+    transBlocks.push(header ? [header, ...transLines].join('\n') : transLines.join('\n'));
+  }
+
+  const songResult = songBlocks.filter(b => b).join('\n\n');
+  const transResult = transBlocks.filter(b => b).join('\n\n');
+  console.log(`[Split] Ergebnis — Song: ${songResult.length} Zeichen, Trans: ${transResult.length} Zeichen`);
+  console.groupEnd();
+
+  document.getElementById('song').value        = songResult;
+  document.getElementById('translation').value = transResult;
+  runFormat();
+});
 </script>
 </body>
 </html>
