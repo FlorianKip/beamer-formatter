@@ -864,14 +864,14 @@
         <span class="lang-badge" id="badge1"></span>
         <button id="aiCleanupBtn">✨ Mit KI bereinigen</button>
         <button id="importBtn">📂 Datei öffnen</button>
-        <input type="file" id="importFile" accept=".txt,.docx,.pdf,.png,.jpg,.jpeg,.webp,.bmp,.gif,.tiff,.tif" style="display:none">
+        <input type="file" id="importFile" accept=".txt,.docx,.pdf,.png,.jpg,.jpeg,.webp,.bmp,.gif,.tiff,.tif,.mp3,.wav,.ogg,.aac,.flac,.aiff,.m4a,.wma" style="display:none">
       </div>
       <div class="textarea-wrap">
         <textarea id="song" placeholder=" "></textarea>
         <div class="textarea-overlay" id="songOverlay">
           <div class="overlay-icon">📄</div>
           <div class="overlay-text">Text einfügen, eintippen<br>oder <strong>Datei hierher ziehen</strong></div>
-          <div class="overlay-hint">TXT · Word · PDF · Bild</div>
+          <div class="overlay-hint">TXT · Word · PDF · Bild · Audio</div>
           <pre class="overlay-example">Strophe 1
 Zeile 1
 Zeile 2
@@ -1775,9 +1775,17 @@ async function extractTextFromFile(file) {
     return cleaned;
   }
 
+  const audioExts = ['mp3', 'wav', 'ogg', 'aac', 'flac', 'aiff', 'm4a', 'wma'];
+  if (audioExts.includes(ext) || file.type.startsWith('audio/')) {
+    console.log('Audio erkannt, starte Transkription via Gemini…');
+    const text = await transcribeAudioWithGemini(file);
+    console.groupEnd();
+    return text;
+  }
+
   console.error('Nicht unterstützte Endung:', ext);
   console.groupEnd();
-  throw new Error('Nur TXT, Word, PDF und Bilder werden unterstützt');
+  throw new Error('Nur TXT, Word, PDF, Bilder und Audio werden unterstützt');
 }
 
 // ─── PDF Text-Extraktion (erst digital, dann OCR Fallback) ────────────────────
@@ -1896,6 +1904,84 @@ async function renderPageToBase64(page) {
   await page.render({ canvasContext: ctx, viewport }).promise;
   // Return base64 without the data:image/... prefix
   return canvas.toDataURL('image/png').replace(/^data:image\/png;base64,/, '');
+}
+
+// ─── Audio-Transkription via Gemini ───────────────────────────────────────────
+
+const AUDIO_TRANSCRIBE_PROMPT = `Transkribiere dieses Lied. Regeln:
+- Gib NUR den reinen Liedtext zurück, KEINE Erklärungen, KEIN Markdown
+- KEINEN Titel oder Überschrift
+- KEINE Strophennummern
+- Trenne Strophen und Refrain mit einer Leerzeile
+- Schreibe vor den Refrain das Wort "Refrain" auf einer eigenen Zeile
+- Wenn der Refrain mehrfach gesungen wird, schreibe ihn nach jeder Strophe
+- Jede Zeile soll eine sinnvolle, vollständige Liedzeile sein
+- Erkenne die Sprache automatisch (Deutsch, Russisch oder andere)`;
+
+async function transcribeAudioWithGemini(file) {
+  console.group('[Audio Transkription]');
+
+  statusEl.textContent = '🎵 Audio wird transkribiert…';
+  statusEl.className = 'status';
+
+  const buf = await file.arrayBuffer();
+  const base64 = btoa(new Uint8Array(buf).reduce((s, b) => s + String.fromCharCode(b), ''));
+  const mimeType = file.type || 'audio/' + file.name.split('.').pop().toLowerCase();
+
+  console.log(`Audio: ${mimeType}, ${(buf.byteLength / 1024 / 1024).toFixed(2)} MB, Base64: ${base64.length} Zeichen`);
+
+  if (buf.byteLength > 20 * 1024 * 1024) {
+    console.error('Audio zu groß (max 20 MB für inline)');
+    console.groupEnd();
+    throw new Error('Audio-Datei zu groß (max. 20 MB). Bitte eine kürzere oder komprimierte Datei verwenden.');
+  }
+
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite:generateContent?key=${GOOGLE_API_KEY}`;
+  console.log('Gemini API Request an:', url.replace(GOOGLE_API_KEY, '***'));
+
+  const startTime = performance.now();
+  const response = await fetch(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      contents: [{
+        parts: [
+          { text: AUDIO_TRANSCRIBE_PROMPT },
+          { inline_data: { mime_type: mimeType, data: base64 } }
+        ]
+      }]
+    })
+  });
+
+  const duration = ((performance.now() - startTime) / 1000).toFixed(1);
+  console.log(`Gemini Response: ${response.status} ${response.statusText} (${duration}s)`);
+
+  if (!response.ok) {
+    const err = await response.json();
+    console.error('Gemini API Fehler:', err);
+    console.groupEnd();
+    throw new Error('Transkription fehlgeschlagen: ' + (err.error?.message || response.statusText));
+  }
+
+  const data = await response.json();
+  const candidate = data.candidates?.[0];
+  if (!candidate) { console.groupEnd(); throw new Error('Keine Antwort von Gemini'); }
+
+  let text = candidate.content?.parts?.map(p => p.text).join('').trim();
+  if (!text) { console.groupEnd(); throw new Error('Leere Transkription'); }
+
+  // Nachbearbeitung
+  text = text
+    .replace(/^```\w*\n?/gm, '').replace(/\n?```$/gm, '')
+    .replace(/^\d+\.\s+/gm, '')
+    .replace(/^(CHOR|Chorus|Припев)\s*:?\s*$/gim, 'Refrain')
+    .trim();
+
+  console.log(`Transkription: ${text.length} Zeichen, ${text.split('\n').length} Zeilen`);
+  console.log('Ergebnis:\n' + text);
+  console.groupEnd();
+
+  return text;
 }
 
 // ─── OCR Text Cleanup (Akkorde entfernen, Silben zusammenfügen) ───────────────
