@@ -1977,7 +1977,10 @@ function cleanOcrText(raw) {
     }
   }
 
-  // Pass 4: Einzelne Buchstaben-Artefakte entfernen (z.B. "с", "а", "MO")
+  // Pass 4: Einzelne Buchstaben-Artefakte entfernen und kurze Wort-Zeilen zusammenfügen
+  // OCR bei Noten-PDFs zerlegt Zeilen oft in Einzelwörter.
+  // Strategie: Zeile die ein einzelnes kurzes Wort ist (kein Satzzeichen am Ende,
+  // kein Label, keine Nummer) wird an die vorherige Zeile angehängt MIT Leerzeichen.
   const merged = [];
   for (let i = 0; i < cleaned3.length; i++) {
     const t = cleaned3[i].trim();
@@ -1992,13 +1995,26 @@ function cleanOcrText(raw) {
       continue;
     }
 
+    // Kurzes einzelnes Wort ohne Satzzeichen am Ende? → an vorherige Zeile anhängen
+    const isShortWord = t.length <= 15 && !/\s/.test(t) && !/[.!?,;:)»"…]$/.test(t);
+    if (isShortWord && !isSectionLabel(t) && !/^\d+\./.test(t) && merged.length > 0) {
+      const lastIdx = merged.length - 1;
+      const lastLine = merged[lastIdx].trim();
+      // Nur anhängen wenn letzte Zeile nicht leer und kein Section-Label ist
+      if (lastLine && !isSectionLabel(lastLine)) {
+        console.log(`  Wort zusammengefügt: "${lastLine}" + " ${t}"`);
+        merged[lastIdx] = merged[lastIdx].trimEnd() + ' ' + t;
+        continue;
+      }
+    }
+
     merged.push(cleaned3[i]);
   }
 
   // Pass 5: Doppelte/wiederholte erste Zeilen entfernen
   if (merged.length >= 2) {
-    const a = merged[0]?.trim().replace(/^\d+\.\s*/, '');
-    const b = merged[1]?.trim().replace(/^\d+\.\s*/, '');
+    const a = merged[0]?.trim().replace(/^\d+\.\s*/, '').toLowerCase();
+    const b = merged[1]?.trim().replace(/^\d+\.\s*/, '').toLowerCase();
     if (a && b && a === b) {
       console.log(`  Doppelte erste Zeile entfernt: "${merged[0].trim()}"`);
       merged.splice(0, 1);
