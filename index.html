@@ -2528,8 +2528,96 @@ document.getElementById('splitBtn').addEventListener('click', () => {
 
   console.group('[Split] Zeilen aufteilen gestartet');
 
-  // Separator-Zeilen (---, ----) durch Leerzeilen ersetzen, dann nach Leerzeilen splitten
+  // Separator-Zeilen (---, ----) durch Leerzeilen ersetzen
   const normalized = raw.replace(/^-{2,}\s*$/gm, '');
+
+  // Prüfe ob der Text das "eine Zeile pro Absatz" Format hat (z.B. aus Word-Import)
+  // Anzeichen: viele Einzel-Zeilen-Blöcke und abwechselnde Sprachen
+  const nonEmptyLines = normalized.split('\n').map(l => l.trim()).filter(l => l);
+  const rawBlocks = normalized.split(/\n{2,}/).filter(b => b.trim());
+  const isSingleLinePerBlock = rawBlocks.length > 6 && rawBlocks.every(b => b.trim().split('\n').filter(l => l.trim()).length <= 1);
+
+  let contentLines;
+  if (isSingleLinePerBlock && detectAlternatingLanguages(nonEmptyLines.join('\n'))) {
+    // Einzel-Zeilen-Format erkannt: Leerzeilen ignorieren, nur Separatoren als Abschnitt-Trenner
+    console.log('[Split] Einzel-Zeilen-Format erkannt — Leerzeilen werden ignoriert, nur --- als Trenner');
+    contentLines = nonEmptyLines;
+  } else {
+    contentLines = null; // Normaler Block-basierter Modus
+  }
+
+  if (contentLines) {
+    // Kompakter Modus: alle Zeilen fortlaufend, abwechselnd DE/RU
+    // Gruppiere in Strophen-Blöcke anhand von Section-Labels oder wenn 4+ Zeilen-Paare zusammen sind
+    const songLines = [];
+    const transLines = [];
+    let currentSongBlock = [];
+    let currentTransBlock = [];
+    let pairCount = 0;
+
+    for (let i = 0; i < contentLines.length; i++) {
+      const line = contentLines[i];
+
+      // Section label → neuen Abschnitt beginnen
+      if (isSectionLabel(line)) {
+        if (currentSongBlock.length) {
+          songLines.push(currentSongBlock.join('\n'));
+          transLines.push(currentTransBlock.join('\n'));
+        }
+        currentSongBlock = [];
+        currentTransBlock = [];
+        pairCount = 0;
+        // Label wird nicht mitgenommen (Formatter erzeugt eigene Labels)
+        continue;
+      }
+
+      // Nächste Zeile finden (gleiche oder andere Sprache)
+      const isRu = isRussian(line);
+      const nextLine = (i + 1 < contentLines.length && !isSectionLabel(contentLines[i + 1])) ? contentLines[i + 1] : null;
+      const nextIsRu = nextLine ? isRussian(nextLine) : null;
+
+      // Wenn aktuelle und nächste Zeile verschiedene Sprachen sind → Paar
+      if (nextLine && isRu !== nextIsRu) {
+        if (isRu) {
+          currentSongBlock.push(nextLine);
+          currentTransBlock.push(line);
+        } else {
+          currentSongBlock.push(line);
+          currentTransBlock.push(nextLine);
+        }
+        pairCount++;
+        i++; // Nächste Zeile überspringen (schon verarbeitet)
+
+        // Nach 4 Paaren einen Abschnitt abschließen (typische Strophen-Länge)
+        if (pairCount >= 4) {
+          songLines.push(currentSongBlock.join('\n'));
+          transLines.push(currentTransBlock.join('\n'));
+          currentSongBlock = [];
+          currentTransBlock = [];
+          pairCount = 0;
+        }
+      } else {
+        // Einzelne Zeile ohne Paar-Partner
+        currentSongBlock.push(line);
+        currentTransBlock.push('');
+      }
+    }
+
+    // Restlichen Block abschließen
+    if (currentSongBlock.length) {
+      songLines.push(currentSongBlock.join('\n'));
+      transLines.push(currentTransBlock.join('\n'));
+    }
+
+    console.log(`[Split] Kompakt-Modus: ${songLines.length} Abschnitte`);
+    document.getElementById('song').value = songLines.join('\n\n');
+    document.getElementById('translation').value = transLines.join('\n\n');
+    console.groupEnd();
+    runFormat();
+    return;
+  }
+
+  // Standard-Modus: Block-basierter Split
   const blocks = normalized.split(/\n{2,}/);
   const songBlocks = [];
   const transBlocks = [];
@@ -2542,22 +2630,22 @@ document.getElementById('splitBtn').addEventListener('click', () => {
 
     // If first line is a section label, keep it as header for both sides
     let header = '';
-    let contentLines = lines;
+    let blockContent = lines;
     if (isSectionLabel(lines[0]) || isSeparator(lines[0])) {
       header = lines[0];
-      contentLines = lines.slice(1);
+      blockContent = lines.slice(1);
     }
 
-    console.log(`  Block: ${lines.length} Zeilen, Header: "${header || '(keiner)'}", Content: ${contentLines.length} Zeilen`);
+    console.log(`  Block: ${lines.length} Zeilen, Header: "${header || '(keiner)'}", Content: ${blockContent.length} Zeilen`);
 
     // Check if block looks alternating: odd lines one lang, even lines another
-    const odds  = contentLines.filter((_, i) => i % 2 === 0);
-    const evens = contentLines.filter((_, i) => i % 2 === 1);
+    const odds  = blockContent.filter((_, i) => i % 2 === 0);
+    const evens = blockContent.filter((_, i) => i % 2 === 1);
 
     if (evens.length === 0) {
       // Single-language block — put entirely in song
       console.log(`    → Einsprachig (nur ungerade Zeilen), komplett in Song`);
-      songBlocks.push(header ? [header, ...contentLines].join('\n') : contentLines.join('\n'));
+      songBlocks.push(header ? [header, ...blockContent].join('\n') : blockContent.join('\n'));
       transBlocks.push('');
       continue;
     }
@@ -2567,20 +2655,19 @@ document.getElementById('splitBtn').addEventListener('click', () => {
     const evensLang = detectLanguage(evens);
     console.log(`    Ungerade Zeilen (${odds.length}): ${oddsLang} | Gerade Zeilen (${evens.length}): ${evensLang}`);
 
-    let songLines, transLines;
+    let songOut, transOut;
     if (oddsLang === 'german' && evensLang === 'russian') {
-      songLines = odds; transLines = evens;
+      songOut = odds; transOut = evens;
     } else if (oddsLang === 'russian' && evensLang === 'german') {
-      songLines = odds; transLines = evens;
+      songOut = odds; transOut = evens;
     } else {
-      // Same language or unclear — treat odd as song, even as translation
       console.warn(`    → Gleiche Sprache oder unklar (${oddsLang}/${evensLang}), nutze Reihenfolge`);
-      songLines = odds; transLines = evens;
+      songOut = odds; transOut = evens;
     }
 
-    console.log(`    → Song: ${songLines.length} Zeilen, Trans: ${transLines.length} Zeilen`);
-    songBlocks.push(header ? [header, ...songLines].join('\n') : songLines.join('\n'));
-    transBlocks.push(header ? [header, ...transLines].join('\n') : transLines.join('\n'));
+    console.log(`    → Song: ${songOut.length} Zeilen, Trans: ${transOut.length} Zeilen`);
+    songBlocks.push(header ? [header, ...songOut].join('\n') : songOut.join('\n'));
+    transBlocks.push(header ? [header, ...transOut].join('\n') : transOut.join('\n'));
   }
 
   const songResult = songBlocks.filter(b => b).join('\n\n');
