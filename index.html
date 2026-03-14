@@ -659,6 +659,32 @@
   }
   #importBtn:hover { color: var(--btn-hover-color); border-color: var(--btn-color); transform: none; }
 
+  /* ── KI-Bereinigen button ── */
+  #aiCleanupBtn {
+    display: none;
+    background: transparent;
+    color: var(--translate-color);
+    border: 1px solid var(--translate-border);
+    font-size: 0.68rem;
+    padding: 0px 8px;
+    height: 18px;
+    line-height: 1;
+    font-weight: 500;
+    border-radius: 4px;
+    cursor: pointer;
+    flex-shrink: 0;
+    transition: all 0.18s;
+    letter-spacing: 0;
+    animation: cleanup-pulse 2s ease-in-out 3;
+  }
+  #aiCleanupBtn:hover { background: var(--translate-hover-bg); color: var(--dialog-header-color); border-color: var(--translate-color); transform: none; }
+  #aiCleanupBtn.visible { display: inline-flex; }
+
+  @keyframes cleanup-pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+  }
+
   /* ── Split button ── */
   #splitBtn {
     background: transparent;
@@ -836,6 +862,7 @@
       <div class="panel-label">
         🎼 Liedtext (Original)
         <span class="lang-badge" id="badge1"></span>
+        <button id="aiCleanupBtn">✨ Mit KI bereinigen</button>
         <button id="importBtn">📂 Datei öffnen</button>
         <input type="file" id="importFile" accept=".txt,.docx,.pdf,.png,.jpg,.jpeg,.webp,.bmp,.gif,.tiff,.tif" style="display:none">
       </div>
@@ -2124,24 +2151,157 @@ async function ocrWithVisionAPI(base64Image) {
 
 // ─── File import entry point ──────────────────────────────────────────────────
 
+let lastImportedImageBase64 = null; // Für multimodale Gemini-Anfrage
+let lastImportedImageMime = null;
+
+function showCleanupButton() {
+  document.getElementById('aiCleanupBtn').classList.add('visible');
+}
+function hideCleanupButton() {
+  document.getElementById('aiCleanupBtn').classList.remove('visible');
+  lastImportedImageBase64 = null;
+  lastImportedImageMime = null;
+}
+
 async function importFileToSong(file) {
   if (!file) return;
   console.log('[Import] importFileToSong gestartet für:', file.name);
+  hideCleanupButton();
 
   try {
     const startTime = performance.now();
+
+    // Bild-Base64 speichern für multimodale Gemini-Anfrage
+    const ext = file.name.split('.').pop().toLowerCase();
+    const imageExts = ['png', 'jpg', 'jpeg', 'webp', 'bmp', 'gif', 'tiff', 'tif'];
+    if (imageExts.includes(ext) || file.type.startsWith('image/')) {
+      const buf = await file.arrayBuffer();
+      lastImportedImageBase64 = btoa(new Uint8Array(buf).reduce((s, b) => s + String.fromCharCode(b), ''));
+      lastImportedImageMime = file.type || 'image/' + ext;
+      console.log(`[Import] Bild-Base64 gespeichert für Gemini (${lastImportedImageMime}, ${(lastImportedImageBase64.length * 0.75 / 1024 / 1024).toFixed(2)} MB)`);
+    }
+
     const text = await extractTextFromFile(file);
     const duration = ((performance.now() - startTime) / 1000).toFixed(1);
     console.log(`[Import] Fertig in ${duration}s — ${text.trim().length} Zeichen extrahiert`);
     document.getElementById('song').value = text.trim();
     runFormat();
     statusEl.textContent += '  —  Datei importiert: ' + file.name;
+
+    // KI-Bereinigen Button anzeigen
+    showCleanupButton();
   } catch (e) {
     console.error('[Import] FEHLER:', e);
     statusEl.textContent = 'Import-Fehler: ' + e.message;
     statusEl.className = 'status err';
   }
 }
+
+// Bei manuellem Tippen: nichts — Button bleibt sichtbar bis der User ihn nutzt oder neu importiert
+
+// ─── Gemini KI-Bereinigung ────────────────────────────────────────────────────
+
+const GEMINI_CLEANUP_PROMPT = `Du bekommst einen OCR-erkannten Liedtext der zerstückelt ist (aus einem Notenblatt gescannt).
+Setze die Zeilen richtig zusammen zu einem sauberen Liedtext. Regeln:
+- Gib NUR den bereinigten Liedtext zurück, KEINE Erklärungen, KEIN Markdown
+- Ändere KEIN EINZIGES Wort — nur Zeilenumbrüche und Zusammensetzung korrigieren
+- Füge getrennte Silben wieder zusammen (z.B. "Gol ga tha" → "Golgatha", "бу ду" → "буду")
+- Entferne Akkord-Symbole (z.B. Am, E7, fis7/a, H7, D7, C)
+- Entferne Copyright-Zeilen und Autorenangaben
+- Entferne Liednummern (z.B. "85" am Ende des Titels)
+- Behalte Section-Labels wie "Припев:", "Refrain", "Strophe", "CHOR:" auf eigener Zeile
+- Trenne Abschnitte (Strophen, Refrain) mit genau einer Leerzeile
+- Jede Liedzeile soll eine sinnvolle, vollständige Textzeile sein
+- Wenn der Text ein Lied mit mehreren Strophen ist, nummeriere die Strophen NICHT`;
+
+async function runGeminiCleanup() {
+  const songEl = document.getElementById('song');
+  const rawText = songEl.value.trim();
+  if (!rawText) return;
+
+  const btn = document.getElementById('aiCleanupBtn');
+  btn.textContent = '⏳ Bereinige…';
+  btn.disabled = true;
+
+  console.group('[Gemini Cleanup] Gestartet');
+  console.log('Eingabetext:', rawText.length, 'Zeichen');
+  console.log('Bild verfügbar:', !!lastImportedImageBase64);
+
+  try {
+    // Request-Body bauen
+    const parts = [];
+
+    // Prompt
+    parts.push({ text: GEMINI_CLEANUP_PROMPT });
+
+    // Multimodal: Bild mitsenden wenn verfügbar
+    if (lastImportedImageBase64 && lastImportedImageMime) {
+      console.log(`Sende Bild mit (${lastImportedImageMime}, ~${(lastImportedImageBase64.length * 0.75 / 1024 / 1024).toFixed(2)} MB)`);
+      parts.push({
+        inline_data: {
+          mime_type: lastImportedImageMime,
+          data: lastImportedImageBase64
+        }
+      });
+      parts.push({ text: 'Das ist das Originalbild des Liedtexts. Nutze es um die korrekte Textstruktur zu erkennen.\n\nHier ist der OCR-erkannte Rohtext:\n\n' + rawText });
+    } else {
+      parts.push({ text: 'Hier ist der OCR-erkannte Rohtext:\n\n' + rawText });
+    }
+
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GOOGLE_API_KEY}`;
+    console.log('Gemini API Request an:', url.replace(GOOGLE_API_KEY, '***'));
+
+    const startTime = performance.now();
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        contents: [{ parts }]
+      })
+    });
+
+    const duration = ((performance.now() - startTime) / 1000).toFixed(1);
+    console.log(`Gemini API Response: ${response.status} ${response.statusText} (${duration}s)`);
+
+    if (!response.ok) {
+      const err = await response.json();
+      console.error('Gemini API Fehler:', err);
+      throw new Error(err.error?.message || response.statusText);
+    }
+
+    const data = await response.json();
+    console.log('Gemini Response-Daten:', JSON.stringify(data).slice(0, 500));
+
+    const candidate = data.candidates?.[0];
+    if (!candidate) throw new Error('Keine Antwort von Gemini erhalten');
+
+    const cleanedText = candidate.content?.parts?.map(p => p.text).join('').trim();
+    if (!cleanedText) throw new Error('Leere Antwort von Gemini');
+
+    console.log(`Ergebnis: ${cleanedText.length} Zeichen (vorher: ${rawText.length})`);
+    console.log('Bereinigter Text:\n' + cleanedText);
+
+    songEl.value = cleanedText;
+    runFormat();
+
+    statusEl.textContent += '  —  KI-Bereinigung angewendet';
+    statusEl.className = 'status ok';
+
+    hideCleanupButton();
+
+  } catch (e) {
+    console.error('[Gemini Cleanup] FEHLER:', e);
+    console.error('[Gemini Cleanup] Stack:', e.stack);
+    statusEl.textContent = 'KI-Bereinigung fehlgeschlagen: ' + e.message;
+    statusEl.className = 'status err';
+  } finally {
+    btn.textContent = '✨ Mit KI bereinigen';
+    btn.disabled = false;
+    console.groupEnd();
+  }
+}
+
+document.getElementById('aiCleanupBtn').addEventListener('click', runGeminiCleanup);
 
 // File-Button
 document.getElementById('importBtn').addEventListener('click', () => {
