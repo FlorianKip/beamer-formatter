@@ -1017,7 +1017,7 @@ function isSeparator(line) {
 }
 
 const STROPHE_RE = /^(strophe|vers|verse|куплет)\s*\d*:?\s*$/i;
-const REFRAIN_RE = /^(refrain|chorus|ref\.?|припев)\s*\d*:?\s*$/i;
+const REFRAIN_RE = /^(refrain|chorus|chor|ref\.?|припев)\s*:?\s*\d*:?\s*$/i;
 const BRIDGE_RE  = /^(bridge|мост)\s*:?\s*$/i;
 const BARE_NUM_RE = /^\d+\.?\s*$/;
 const REPEAT_OPEN_RE  = /^I:\s*/i;
@@ -1918,10 +1918,23 @@ function cleanOcrText(raw) {
     lines.shift();
   }
 
-  // Pass 1: Akkorde und OCR-Artefakte entfernen
+  // Pass 0b: Liednummer am Ende der ersten Zeile entfernen (z.B. "Für mich gingst Du nach Golgatha 85")
+  if (lines.length > 0) {
+    const firstLine = lines[0].trim();
+    const numSuffix = firstLine.match(/^(.+?)\s+(\d{1,4})\s*$/);
+    if (numSuffix && numSuffix[1].length > 10) {
+      console.log(`  Liednummer aus erster Zeile entfernt: "${firstLine}" → "${numSuffix[1]}"`);
+      lines[0] = numSuffix[1];
+    }
+  }
+
+  // Pass 1: Akkorde, OCR-Artefakte, Copyright- und Autorzeilen entfernen
+  const COPYRIGHT_RE = /^(?:©|\(c\)|copyright|\d{4}\s+\w+\s+\w+.*(?:verlag|music|publishing|medien|records))/i;
+  const AUTHOR_RE = /^(?:text\s+(?:und|&|and)\s+(?:melodie|musik|melody)|melodie\s*:|musik\s*:|text\s*:|автор|слова\s+и\s+муз)/i;
   const cleaned1 = [];
   let removedChords = 0;
   let removedGarbage = 0;
+  let removedMeta = 0;
   for (const line of lines) {
     const t = line.trim();
     if (isChordLine(t)) {
@@ -1930,6 +1943,12 @@ function cleanOcrText(raw) {
     } else if (isOcrGarbage(t)) {
       console.log(`  OCR-Artefakt entfernt: "${t}"`);
       removedGarbage++;
+    } else if (COPYRIGHT_RE.test(t)) {
+      console.log(`  Copyright entfernt: "${t}"`);
+      removedMeta++;
+    } else if (AUTHOR_RE.test(t)) {
+      console.log(`  Autor-Zeile entfernt: "${t}"`);
+      removedMeta++;
     } else if (t === '-') {
       // Alleinstehender Bindestrich → überspringen
     } else {
@@ -1940,7 +1959,7 @@ function cleanOcrText(raw) {
   // Pass 2: Inline Section-Labels abtrennen
   // z.B. "Припев: В грех упал, Пусть..." → "Припев:" + "В грех упал, Пусть..."
   // z.B. "Refrain Zeile eins..." → "Refrain" + "Zeile eins..."
-  const INLINE_LABEL_RE = /^((?:strophe|vers|verse|куплет|refrain|chorus|ref\.?|припев|bridge|мост)\s*\d*:?)\s+(.+)$/i;
+  const INLINE_LABEL_RE = /^((?:strophe|vers|verse|куплет|refrain|chorus|chor|ref\.?|припев|bridge|мост)\s*:?\s*\d*:?)\s+(.+)$/i;
   const cleaned1b = [];
   for (const line of cleaned1) {
     const m = line.trim().match(INLINE_LABEL_RE);
@@ -2050,7 +2069,7 @@ function cleanOcrText(raw) {
   while (final.length && !final[0].trim()) final.shift();
   while (final.length && !final[final.length - 1].trim()) final.pop();
 
-  console.log(`Ausgang: ${final.length} Zeilen (${removedChords} Akkorde, ${removedGarbage} Artefakte entfernt, ${lines.length - final.length} Zeilen total bereinigt)`);
+  console.log(`Ausgang: ${final.length} Zeilen (${removedChords} Akkorde, ${removedGarbage} Artefakte, ${removedMeta} Meta-Zeilen entfernt)`);
   console.groupEnd();
   return final.join('\n');
 }
