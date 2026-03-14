@@ -1610,7 +1610,7 @@ aiDialogOverlay.addEventListener('click', (e) => {
 
 // ─── KI-Übersetzung via Google Translate API ─────────────────────────────────
 
-const GOOGLE_API_KEY = 'AIzaSyAoRYmYKEY51hz3h0TDfeHOgLF22tjUnLE';
+const GOOGLE_API_KEY = 'AIzaSyBQM5pnAPGcR_et3LoOSGpyugSrjy6yt8Y';
 
 async function runAutoTranslate() {
   const songRaw = document.getElementById('song').value.trim();
@@ -2331,9 +2331,21 @@ document.getElementById('importFile').addEventListener('change', (e) => {
     if (!file) return;
     console.log(`[Import] Datei per Drag & Drop auf #${id}:`, file.name, `(${(file.size / 1024).toFixed(1)} KB)`);
     try {
+      // Für Song-Textarea: Bild speichern + Cleanup-Button zeigen
+      if (id === 'song') {
+        hideCleanupButton();
+        const ext = file.name.split('.').pop().toLowerCase();
+        const imageExts = ['png', 'jpg', 'jpeg', 'webp', 'bmp', 'gif', 'tiff', 'tif'];
+        if (imageExts.includes(ext) || file.type.startsWith('image/')) {
+          const buf = await file.arrayBuffer();
+          lastImportedImageBase64 = btoa(new Uint8Array(buf).reduce((s, b) => s + String.fromCharCode(b), ''));
+          lastImportedImageMime = file.type || 'image/' + ext;
+        }
+      }
       const text = await extractTextFromFile(file);
       ta.value = text.trim();
       runFormat();
+      if (id === 'song') showCleanupButton();
     } catch (err) {
       console.error(`[Import] Drag & Drop Fehler auf #${id}:`, err);
       statusEl.textContent = 'Import-Fehler: ' + err.message;
