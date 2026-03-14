@@ -2298,13 +2298,38 @@ async function runGeminiCleanup() {
     if (!cleanedRaw) throw new Error('Leere Antwort von Gemini');
 
     // Nachbearbeitung: Gemini hält sich nicht immer an alle Regeln
-    const postProcessed = cleanedRaw
-      .split('\n')
-      .map(line => {
-        // Strophennummern entfernen: "1. Text" → "Text"
-        return line.replace(/^\d+\.\s+/, '');
-      })
-      .join('\n')
+    let lines = cleanedRaw.split('\n');
+
+    // Strophennummern entfernen: "1. Text" → "Text"
+    lines = lines.map(line => line.replace(/^\d+\.\s+/, ''));
+
+    // Zeilenübergreifende Silbentrennung reparieren: "da-" + "für." → "dafür."
+    const joined = [];
+    for (let i = 0; i < lines.length; i++) {
+      const t = lines[i].trimEnd();
+      if (t.match(/\p{L}-$/u) && i + 1 < lines.length && lines[i + 1].trim().match(/^\p{Ll}/u)) {
+        joined.push(t.slice(0, -1) + lines[i + 1].trim());
+        i++;
+      } else {
+        joined.push(lines[i]);
+      }
+    }
+
+    // Titel-Duplikat entfernen: Wenn die erste Zeile (oder Teile davon) im restlichen Text vorkommt
+    if (joined.length >= 2) {
+      const first = joined[0].trim();
+      if (first && !isSectionLabel(first)) {
+        const rest = joined.slice(1).join('\n');
+        if (rest.includes(first)) {
+          console.log(`  Titel-Duplikat entfernt: "${first}"`);
+          joined.shift();
+          // Führende Leerzeile nach Entfernung auch weg
+          while (joined.length && !joined[0].trim()) joined.shift();
+        }
+      }
+    }
+
+    const postProcessed = joined.join('\n')
       // CHOR: / Chorus: durch Refrain ersetzen
       .replace(/^(CHOR|Chorus|Припев)\s*:?\s*$/gim, 'Refrain')
       // Markdown Codeblöcke entfernen falls Gemini sie erzeugt
