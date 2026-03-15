@@ -431,6 +431,8 @@
   #output-display .line-trans { color: var(--out-trans); }
   #output-display .line-sep   { color: var(--out-sep); user-select: none; }
   #output-display .line-err   { color: var(--out-err); font-style: italic; }
+  #output-display .line-long  { background: rgba(240,160,64,0.15); border-left: 3px solid #f0a040; padding-left: 6px; }
+  #output-display.has-long-lines { border-color: #f0a040; }
   #output-display .line-empty { min-height: 1.65em; display: block; }
 
   .output-legend {
@@ -471,6 +473,23 @@
     transition: all 0.18s;
     letter-spacing: 0.3px;
   }
+
+  .ws-toggle {
+    position: absolute;
+    top: 6px;
+    right: 8px;
+    z-index: 3;
+    cursor: pointer;
+    font-size: 1.1rem;
+    color: var(--btn-color);
+    opacity: 0.35;
+    transition: all 0.15s;
+    user-select: none;
+    line-height: 1;
+  }
+  .ws-toggle:hover { opacity: 0.7; }
+  .ws-toggle.active { opacity: 1; color: #5cb85c; }
+  textarea.ws-visible { color: var(--out-song); }
 
   #debugBtn {
     background: transparent;
@@ -1057,6 +1076,7 @@
       </div>
       <div class="textarea-wrap">
         <textarea id="song" placeholder=" "></textarea>
+        <span id="wsToggle" class="ws-toggle" title="Formatierungszeichen ein/ausblenden">¶</span>
         <div class="textarea-overlay" id="songOverlay">
           <div class="overlay-icon">📄</div>
           <div class="overlay-text">Text einfügen, eintippen<br>oder <strong>Datei hierher ziehen</strong></div>
@@ -1336,6 +1356,78 @@ window.addEventListener('error', (e) => {
 window.addEventListener('unhandledrejection', (e) => {
   console.error('[UNHANDLED PROMISE REJECTION]', e.reason);
 });
+
+// ─── API Rate Limiting ────────────────────────────────────────────────────────
+
+function createLimiter(maxCalls, windowMs, cooldownMs) {
+  const timestamps = [];
+  let lastCall = 0;
+  return {
+    canProceed() {
+      const now = Date.now();
+      if (now - lastCall < cooldownMs) return { allowed: false, retryIn: cooldownMs - (now - lastCall) };
+      while (timestamps.length && now - timestamps[0] > windowMs) timestamps.shift();
+      if (timestamps.length >= maxCalls) return { allowed: false, retryIn: windowMs - (now - timestamps[0]) };
+      timestamps.push(now);
+      lastCall = now;
+      return { allowed: true };
+    }
+  };
+}
+
+const apiLimiters = {
+  translate: createLimiter(30, 60000, 500),
+  vision: createLimiter(10, 60000, 2000),
+  gemini: createLimiter(15, 60000, 1000)
+};
+
+function checkRateLimit(apiName) {
+  const check = apiLimiters[apiName].canProceed();
+  if (!check.allowed) {
+    const secs = Math.ceil(check.retryIn / 1000);
+    statusEl.textContent = `Bitte warte ${secs}s — zu viele Anfragen`;
+    statusEl.className = 'status warn';
+    console.warn(`[RateLimit] ${apiName} blockiert — ${secs}s warten`);
+    return false;
+  }
+  return true;
+}
+
+// ─── API Retry Wrapper ────────────────────────────────────────────────────────
+
+async function fetchWithRetry(url, options = {}, maxRetries = 2) {
+  for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 30000);
+    try {
+      const response = await fetch(url, { ...options, signal: controller.signal });
+      clearTimeout(timeoutId);
+      if (response.ok || response.status < 500) return response;
+      // 5xx → Retry
+      if (attempt < maxRetries) {
+        const delay = response.status === 429
+          ? (parseInt(response.headers.get('Retry-After') || '5', 10) * 1000)
+          : (2000 * Math.pow(2, attempt));
+        statusEl.textContent = `Verbindungsfehler (${response.status}) — versuche erneut (${attempt + 1}/${maxRetries})…`;
+        statusEl.className = 'status warn';
+        await new Promise(r => setTimeout(r, delay));
+        continue;
+      }
+      return response;
+    } catch (err) {
+      clearTimeout(timeoutId);
+      if (attempt < maxRetries) {
+        const delay = 2000 * Math.pow(2, attempt);
+        const reason = err.name === 'AbortError' ? 'Zeitüberschreitung' : 'Netzwerkfehler';
+        statusEl.textContent = `${reason} — versuche erneut (${attempt + 1}/${maxRetries})…`;
+        statusEl.className = 'status warn';
+        await new Promise(r => setTimeout(r, delay));
+        continue;
+      }
+      throw err;
+    }
+  }
+}
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -1635,14 +1727,111 @@ const errorDetailBody = document.getElementById('error-detail-body');
 
 let debounceTimer = null;
 
+// ─── Output Validation ────────────────────────────────────────────────────────
+
+function validateOutput(lines) {
+  if (!lines.length) return [];
+  const warnings = [];
+
+  // Strophen in strukturierte Daten parsen
+  const strophes = [];
+  let current = null;
+  let slidePairs = 0;
+
+  for (const l of lines) {
+    if (l.type === 'label') {
+      if (current) current.slideMax = Math.max(current.slideMax, slidePairs);
+      current = { label: l.text, songLines: [], transLines: [], pairCount: 0, slideMax: 0 };
+      strophes.push(current);
+      slidePairs = 0;
+    } else if (l.type === 'song' && current) {
+      current.songLines.push(l.text);
+      current.pairCount++;
+      slidePairs++;
+    } else if (l.type === 'trans' && current) {
+      current.transLines.push(l.text);
+    } else if (l.type === 'sep' && l.text === '--') {
+      if (current) current.slideMax = Math.max(current.slideMax, slidePairs);
+      slidePairs = 0;
+    }
+    // Lange Zeilen — nur inline markiert, nicht in der Hinweis-Box
+  }
+  if (current) current.slideMax = Math.max(current.slideMax, slidePairs);
+
+  // Check 1: Fehler-Zeilen
+  const errCount = lines.filter(l => l.type === 'err').length;
+  if (errCount) warnings.push({ icon: '⚠️', msg: `${errCount} fehlende Zeile${errCount > 1 ? 'n' : ''} in der Ausgabe` });
+
+  // Check 2-5: Strophen-Analyse
+  for (const s of strophes) {
+    if (s.pairCount === 0) warnings.push({ icon: '⚠️', msg: `${s.label}: Leere Strophe` });
+    else if (s.pairCount === 1) warnings.push({ icon: '⚠️', msg: `${s.label}: Nur 1 Zeilenpaar — Fehler?` });
+
+    // Check 8: Folie hat > 3 Zeilenpaare
+    if (s.slideMax > 3) warnings.push({ icon: '⚠️', msg: `${s.label}: Eine Folie hat ${s.slideMax} Paare (max. 3 empfohlen)` });
+  }
+  if (strophes.length > 15) warnings.push({ icon: '⚠️', msg: `Ungewöhnlich viele Strophen (${strophes.length}) — Formatierung prüfen` });
+
+  // Check 6: DE/RU Zeilen vertauscht
+  if (strophes.length >= 2) {
+    const firstLangs = strophes.map(s => s.songLines.length > 0 ? (isRussian(s.songLines[0]) ? 'ru' : 'de') : null).filter(Boolean);
+    const dominant = firstLangs.filter(l => l === firstLangs[0]).length;
+    if (dominant < firstLangs.length) {
+      const swapped = strophes.filter(s => s.songLines.length > 0 && (isRussian(s.songLines[0]) ? 'ru' : 'de') !== firstLangs[0]);
+      swapped.forEach(s => warnings.push({ icon: '⚠️', msg: `${s.label}: Sprachen könnten vertauscht sein (erste Zeile ist ${isRussian(s.songLines[0]) ? 'RU' : 'DE'} statt ${firstLangs[0].toUpperCase()})` }));
+    }
+  }
+
+  // Check 7: Ungleiche Zeilenanzahl Song vs Translation pro Strophe
+  for (const s of strophes) {
+    if (s.songLines.length > 0 && s.transLines.length > 0 && s.songLines.length !== s.transLines.length) {
+      warnings.push({ icon: 'ℹ️', msg: `${s.label}: ${s.songLines.length} Liedtext-Zeilen vs ${s.transLines.length} Übersetzungs-Zeilen` });
+    }
+  }
+
+  // Check 9: Refrain wird nicht wiederholt
+  const refrainStrophes = strophes.filter(s => s.label.startsWith('Refrain'));
+  const nonRefrainStrophes = strophes.filter(s => !s.label.startsWith('Refrain'));
+  if (refrainStrophes.length === 1 && nonRefrainStrophes.length >= 3) {
+    warnings.push({ icon: 'ℹ️', msg: `Refrain kommt nur 1x vor bei ${nonRefrainStrophes.length} Strophen — wird er nach jeder Strophe wiederholt?` });
+  }
+
+  // Check 10: Identische aufeinanderfolgende Strophen
+  for (let i = 1; i < strophes.length; i++) {
+    const prev = strophes[i - 1].songLines.join('\n');
+    const curr = strophes[i].songLines.join('\n');
+    if (prev && curr && prev === curr) {
+      warnings.push({ icon: '⚠️', msg: `${strophes[i - 1].label} und ${strophes[i].label} sind identisch — Duplikat?` });
+    }
+  }
+
+  // Check 11: Letzte Strophe ist nicht "Refrain L"
+  if (refrainStrophes.length > 0 && strophes.length >= 3) {
+    const last = strophes[strophes.length - 1];
+    if (!last.label.includes('Refrain L')) {
+      warnings.push({ icon: 'ℹ️', msg: `Letzte Strophe ist "${last.label}" — erwartet "Refrain L" als Abschluss` });
+    }
+  }
+
+  return warnings;
+}
+
 function renderOutput(lines) {
-  if (!lines.length) { outputDisplay.innerHTML = ''; outputEl.value = ''; return; }
+  if (!lines.length) { outputDisplay.innerHTML = ''; outputEl.value = ''; outputDisplay.classList.remove('has-long-lines'); return; }
+
+  const MAX_LINE = 50;
+  let hasLong = false;
 
   outputDisplay.innerHTML = lines.map(({ type, text }) => {
     const escaped = text.replace(/&/g, '&amp;').replace(/</g, '&lt;');
-    return `<div class="line-${type}">${escaped}</div>`;
+    const isLong = (type === 'song' || type === 'trans') && text.length > MAX_LINE;
+    if (isLong) hasLong = true;
+    const extraClass = isLong ? ' line-long' : '';
+    const badge = isLong ? `<span style="opacity:0.5;font-size:0.75em"> (${text.length})</span>` : '';
+    return `<div class="line-${type}${extraClass}">${escaped}${badge}</div>`;
   }).join('');
 
+  outputDisplay.classList.toggle('has-long-lines', hasLong);
   outputEl.value = lines.map(l => l.text).join('\n');
 }
 
@@ -1711,8 +1900,8 @@ function detectAlternatingLanguages(raw) {
 }
 
 function runFormat() {
-  const songRaw  = document.getElementById('song').value;
-  const transRaw = document.getElementById('translation').value;
+  const songRaw  = typeof getSongValue === 'function' ? getSongValue() : document.getElementById('song').value;
+  const transRaw = typeof getTransValue === 'function' ? getTransValue() : document.getElementById('translation').value;
 
   updateOverlays();
   updateBadge('song', 'badge1');
@@ -1769,9 +1958,17 @@ function runFormat() {
     if (missing) {
       statusEl.textContent = `${langLabel}  •  Formatiert${slideInfo}`;
       statusEl.className = 'status warn';
+    } else {
+      statusEl.textContent = `${langLabel}  •  Formatiert${slideInfo}`;
+      statusEl.className = 'status ok';
+    }
 
+    // Hinweis-Box: Zeilen-Abgleich + Validierung zusammen
+    let hinweisHtml = '';
+
+    if (missing) {
       const errRows = buildErrorDetails(songRaw, transRaw);
-      errorDetailBody.innerHTML = errRows.map(({ label, icon, missingIn, n }) => {
+      hinweisHtml += errRows.map(({ label, icon, missingIn, n }) => {
         const lineWord = n === 1 ? 'Zeile fehlt' : 'Zeilen fehlen';
         const hint = missingIn === 'Übersetzung'
           ? `In der <strong>Übersetzung</strong> (Mitte) ${n === 1 ? 'fehlt 1 Zeile' : `fehlen ${n} Zeilen`} — bitte ergänzen.`
@@ -1785,12 +1982,22 @@ function runFormat() {
           </div>
         </div>`;
       }).join('');
-      errorDetail.style.display = 'block';
-    } else {
-      statusEl.textContent = `${langLabel}  •  Formatiert${slideInfo}`;
-      statusEl.className = 'status ok';
-      errorDetail.style.display = 'none';
     }
+
+    const validationWarnings = validateOutput(lines);
+    if (validationWarnings.length) {
+      hinweisHtml += validationWarnings.map(w =>
+        `<div class="err-row">
+          <div class="err-row-icon">${w.icon}</div>
+          <div class="err-row-content">
+            <div class="err-row-section" style="color:var(--btn-hover-color)">${w.msg}</div>
+          </div>
+        </div>`
+      ).join('');
+    }
+
+    errorDetailBody.innerHTML = hinweisHtml;
+    errorDetail.style.display = hinweisHtml ? 'block' : 'none';
   } catch (e) {
     console.error('[runFormat] FEHLER:', e);
     console.error('[runFormat] Stack:', e.stack);
@@ -2047,7 +2254,6 @@ function onInput() {
   syncStructure();
   clearTimeout(debounceTimer);
   debounceTimer = setTimeout(runFormat, 180);
-  // History nach kurzer Pause speichern (nicht bei jedem Tastendruck)
   clearTimeout(historyDebounce);
   historyDebounce = setTimeout(pushHistory, 500);
 }
@@ -2212,6 +2418,52 @@ document.getElementById('clearBtn').addEventListener('click', () => {
   });
 })();
 
+// ─── Whitespace Toggle ────────────────────────────────────────────────────────
+
+let wsActive = false;
+
+document.getElementById('wsToggle').addEventListener('click', () => {
+  wsActive = !wsActive;
+  document.getElementById('wsToggle').classList.toggle('active', wsActive);
+  const songEl = document.getElementById('song');
+  const transEl = document.getElementById('translation');
+
+  if (wsActive) {
+    songEl.value = addWsMarkers(songEl.value);
+    transEl.value = addWsMarkers(transEl.value);
+    songEl.classList.add('ws-visible');
+    transEl.classList.add('ws-visible');
+  } else {
+    songEl.value = stripWsMarkers(songEl.value);
+    transEl.value = stripWsMarkers(transEl.value);
+    songEl.classList.remove('ws-visible');
+    transEl.classList.remove('ws-visible');
+    runFormat();
+  }
+});
+
+function addWsMarkers(text) {
+  if (!text) return '';
+  return text.split('\n').map(line =>
+    line.trim() === '' ? '⏎' : line + '↵'
+  ).join('\n');
+}
+
+function stripWsMarkers(text) {
+  if (!text) return '';
+  return text.replace(/↵$/gm, '').replace(/^⏎$/gm, '');
+}
+
+// Override getValue für song/translation wenn ws aktiv
+function getSongValue() {
+  const v = document.getElementById('song').value;
+  return wsActive ? stripWsMarkers(v) : v;
+}
+function getTransValue() {
+  const v = document.getElementById('translation').value;
+  return wsActive ? stripWsMarkers(v) : v;
+}
+
 // ─── Instructions toggle ──────────────────────────────────────────────────────
 const instrToggle = document.getElementById('instrToggle');
 const instrPanel  = document.getElementById('instructions');
@@ -2307,10 +2559,12 @@ async function runAutoTranslate() {
     console.log(`[Translate] ${toTranslate.length} Zeilen zur Übersetzung gesammelt`);
     if (!toTranslate.length) { console.warn('[Translate] Keine Zeilen gefunden!'); console.groupEnd(); return; }
 
+    if (!checkRateLimit('translate')) { console.groupEnd(); return; }
+
     // Batch translate
     console.log(`[Translate] Sende an Google Translate API (${toTranslate.length} Zeilen, ${sourceLang} → ${targetLang})…`);
     const translateStart = performance.now();
-    const response = await fetch(
+    const response = await fetchWithRetry(
       `https://translation.googleapis.com/language/translate/v2?key=${GOOGLE_API_KEY}`,
       {
         method: 'POST',
@@ -2429,24 +2683,30 @@ async function extractTextFromFile(file) {
 
   if (ext === 'docx') {
     if (typeof mammoth === 'undefined') { console.error('mammoth.js nicht verfügbar'); console.groupEnd(); throw new Error('mammoth.js nicht geladen'); }
-    console.log('DOCX erkannt, starte mammoth.extractRawText…');
+    console.log('DOCX erkannt, starte mammoth.convertToHtml…');
     const buf = await file.arrayBuffer();
     console.log('ArrayBuffer Größe:', buf.byteLength, 'bytes');
-    const result = await mammoth.extractRawText({ arrayBuffer: buf });
-    console.log('mammoth Ergebnis — Zeichen:', result.value.length, '| Warnungen:', result.messages.length);
+    const result = await mammoth.convertToHtml(
+      { arrayBuffer: buf },
+      { ignoreEmptyParagraphs: false }
+    );
+    console.log('mammoth HTML — Zeichen:', result.value.length, '| Warnungen:', result.messages.length);
     if (result.messages.length) console.warn('mammoth Warnungen:', result.messages);
-    // mammoth fügt \n\n zwischen Paragraphen ein — jede Zeile hat eine Leerzeile danach
-    // Normalisieren: Alle \n\n auf \n reduzieren, dann echte Trenner wieder mit Leerzeile versehen
-    let text = result.value;
-    // Alle doppelten Zeilenumbrüche auf einfache reduzieren
-    text = text.replace(/\n\n+/g, '\n');
-    // --- Separatoren mit Leerzeile davor/danach wiederherstellen
-    text = text.replace(/^(-{2,})\s*$/gm, '\n$1\n');
-    // Strophennummern (1. 2. etc.) → Leerzeile davor
-    text = text.replace(/^(\d+\.)/gm, '\n$1');
-    // Mehrfache Leerzeilen auf eine reduzieren
+
+    // HTML parsen — jedes <p> wird eine Zeile, leere <p> werden Leerzeilen
+    const parser = new DOMParser();
+    const htmlDoc = parser.parseFromString(result.value, 'text/html');
+    const paragraphs = htmlDoc.body.querySelectorAll('p');
+
+    const lines = [];
+    for (const p of paragraphs) {
+      lines.push(p.textContent.trim());
+    }
+
+    let text = lines.join('\n');
     text = text.replace(/\n{3,}/g, '\n\n');
-    console.log('DOCX nach Normalisierung — Erste 500 Zeichen:', text.trim().slice(0, 500));
+
+    console.log('DOCX nach HTML-Analyse — Erste 500 Zeichen:', text.trim().slice(0, 500));
     console.groupEnd();
     return text;
   }
@@ -2636,11 +2896,13 @@ async function transcribeAudioWithGemini(file) {
     throw new Error('Audio-Datei zu groß (max. 20 MB). Bitte eine kürzere oder komprimierte Datei verwenden.');
   }
 
+  if (!checkRateLimit('gemini')) { console.groupEnd(); throw new Error('Rate Limit'); }
+
   const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite:generateContent?key=${GOOGLE_API_KEY}`;
   console.log('Gemini API Request an:', url.replace(GOOGLE_API_KEY, '***'));
 
   const startTime = performance.now();
-  const response = await fetch(url, {
+  const response = await fetchWithRetry(url, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
@@ -2876,7 +3138,7 @@ function cleanOcrText(raw) {
     }
 
     // Kurzes einzelnes Wort ohne Satzzeichen am Ende? → an vorherige Zeile anhängen
-    const isShortWord = t.length <= 15 && !/\s/.test(t) && !/[.!?,;:)»"…]$/.test(t);
+    const isShortWord = t.length <= 15 && !/\s/.test(t) && !/[.!?,;:)»"…]$/.test(t) && !isSeparator(t);
     if (isShortWord && !isSectionLabel(t) && !/^\d+\./.test(t) && merged.length > 0) {
       const lastIdx = merged.length - 1;
       const lastLine = merged[lastIdx].trim();
@@ -2947,7 +3209,9 @@ async function ocrWithVisionAPI(base64Image) {
   console.log('    Vision API Request — URL:', url.replace(GOOGLE_API_KEY, '***'));
   console.log('    Vision API Request — Features:', body.requests[0].features, '| LanguageHints:', body.requests[0].imageContext.languageHints);
 
-  const response = await fetch(url, {
+  if (!checkRateLimit('vision')) throw new Error('Rate Limit');
+
+  const response = await fetchWithRetry(url, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(body)
@@ -3159,11 +3423,13 @@ async function runGeminiCleanup() {
       parts.push({ text: 'Hier ist der OCR-erkannte Rohtext:\n\n' + rawText });
     }
 
+    if (!checkRateLimit('gemini')) throw new Error('Rate Limit');
+
     const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite:generateContent?key=${GOOGLE_API_KEY}`;
     console.log('Gemini API Request an:', url.replace(GOOGLE_API_KEY, '***'));
 
     const startTime = performance.now();
-    const response = await fetch(url, {
+    const response = await fetchWithRetry(url, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
