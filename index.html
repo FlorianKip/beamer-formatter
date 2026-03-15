@@ -541,6 +541,22 @@
   .err-row-missing-trans { color: #f0ad4e; }
   .err-row-hint { margin-top: 3px; color: var(--err-hint); font-size: 0.75rem; }
 
+  /* ── Undo/Redo buttons ── */
+  #undoBtn, #redoBtn {
+    background: transparent;
+    color: var(--btn-color);
+    border: 1px solid var(--btn-border);
+  }
+  #undoBtn:hover:not(:disabled), #redoBtn:hover:not(:disabled) {
+    background: var(--btn-hover-bg);
+    color: var(--btn-hover-color);
+    border-color: var(--btn-hover-color);
+  }
+  #undoBtn:disabled, #redoBtn:disabled {
+    opacity: 0.3;
+    cursor: default;
+  }
+
   /* ── Clear button ── */
   #clearBtn {
     background: transparent;
@@ -566,6 +582,74 @@
     letter-spacing: 0;
   }
   #autoTranslateBtn:hover { background: var(--translate-hover-bg); color: var(--dialog-header-color); border-color: var(--translate-color); transform: none; }
+
+  /* ── Sync resync needed ── */
+  #autoTranslateBtn.needs-resync {
+    background: #4a2000;
+    color: #f0a040;
+    border-color: #f0a040;
+    animation: resync-pulse 1.5s ease-in-out infinite;
+  }
+  body.light #autoTranslateBtn.needs-resync {
+    background: #fff3e0;
+    color: #e07000;
+    border-color: #e07000;
+  }
+  @keyframes resync-pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+  }
+
+  #translation.needs-resync {
+    border-color: #f0a040 !important;
+  }
+  .sync-line-info {
+    font-size: 0.75rem;
+    color: #f0a040;
+    margin-top: 4px;
+    padding-left: 2px;
+  }
+
+  /* ── Sync toggle ── */
+  .sync-toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    cursor: pointer;
+    flex-shrink: 0;
+    user-select: none;
+  }
+  .sync-toggle input { display: none; }
+  .sync-slider {
+    width: 28px;
+    height: 14px;
+    background: var(--ta-border);
+    border-radius: 7px;
+    position: relative;
+    transition: background 0.2s;
+  }
+  .sync-slider::after {
+    content: '';
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    width: 10px;
+    height: 10px;
+    background: var(--btn-color);
+    border-radius: 50%;
+    transition: transform 0.2s, background 0.2s;
+  }
+  .sync-toggle input:checked + .sync-slider { background: #2a7a2a; }
+  .sync-toggle input:checked + .sync-slider::after { transform: translateX(14px); background: #5cb85c; }
+  .sync-label {
+    font-size: 0.65rem;
+    color: var(--btn-color);
+    font-weight: 400;
+    text-transform: none;
+    letter-spacing: 0;
+    transition: color 0.2s;
+  }
+  .sync-toggle input:checked ~ .sync-label { color: #5cb85c; }
 
   /* ── AI warning dialog ── */
   .ai-dialog-overlay {
@@ -692,6 +776,21 @@
     border: 1px solid var(--btn-border);
   }
   #splitBtn:hover { background: var(--btn-hover-bg); color: var(--btn-hover-color); border-color: var(--btn-hover-color); }
+  #splitBtn.highlight {
+    background: #1a4a2a;
+    color: #5cb85c;
+    border-color: #5cb85c;
+    animation: split-glow 1s ease-in-out 3;
+  }
+  body.light #splitBtn.highlight {
+    background: #e8f5e8;
+    color: #2a7a2a;
+    border-color: #2a7a2a;
+  }
+  @keyframes split-glow {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+  }
 
   .panel-mini-btn {
     background: transparent;
@@ -814,8 +913,13 @@
     <button id="themeToggle" class="theme-toggle" title="Helles/Dunkles Design">🌙</button>
   </div>
 
-  <div class="instructions-toggle" id="instrToggle">
-    <span class="arrow">&#9654;</span> Anleitung anzeigen
+  <div style="display:flex;gap:20px">
+    <div class="instructions-toggle" id="instrToggle">
+      <span class="arrow">&#9654;</span> Anleitung anzeigen
+    </div>
+    <div class="instructions-toggle" id="featToggle">
+      <span class="arrow">&#9654;</span> Funktionen
+    </div>
   </div>
 
   <div class="instructions" id="instructions">
@@ -844,6 +948,70 @@
       <div><strong>Tipps</strong><br>
         <strong>Zeilen aufteilen</strong> trennt abwechselnde DE/RU-Zeilen automatisch.
         <code>I: Text :|</code> = Wiederholung. <code>--</code> = manueller Folientrenner.</div>
+    </div>
+
+  </div>
+
+  <div class="instructions" id="features">
+
+    <div class="instr-item">
+      <div class="instr-num">📂</div>
+      <div><strong>Datei-Import</strong><br>
+        TXT, Word (.docx), PDF und Bilder (JPG, PNG). Auch per Drag &amp; Drop auf die Textfelder.</div>
+    </div>
+
+    <div class="instr-item">
+      <div class="instr-num">🔍</div>
+      <div><strong>OCR-Texterkennung</strong><br>
+        Bilder und gescannte PDFs werden per Google Vision API erkannt. Akkorde, Copyright und Liednummern werden automatisch entfernt.</div>
+    </div>
+
+    <div class="instr-item">
+      <div class="instr-num">🎵</div>
+      <div><strong>Audio-Import</strong><br>
+        MP3, WAV, OGG und weitere Formate. Das Lied wird per KI transkribiert (Deutsch &amp; Russisch).</div>
+    </div>
+
+    <div class="instr-item">
+      <div class="instr-num">✨</div>
+      <div><strong>KI-Bereinigung</strong><br>
+        Nach einem Import kann der Text per Gemini-KI bereinigt werden: Zeilen richtig zusammensetzen, Silben verbinden, Refrain wiederholen.</div>
+    </div>
+
+    <div class="instr-item">
+      <div class="instr-num">🌐</div>
+      <div><strong>KI-Übersetzung</strong><br>
+        Automatische Übersetzung DE↔RU per Google Translate. Die Zeilenstruktur wird gespiegelt.</div>
+    </div>
+
+    <div class="instr-item">
+      <div class="instr-num">🔄</div>
+      <div><strong>Struktur-Sync</strong><br>
+        Wenn aktiviert, werden Leerzeilen-Änderungen im Liedtext automatisch in die Übersetzung übernommen.</div>
+    </div>
+
+    <div class="instr-item">
+      <div class="instr-num">⇅</div>
+      <div><strong>Zeilen aufteilen</strong><br>
+        Erkennt abwechselnde DE/RU-Zeilen und trennt sie automatisch in Liedtext + Übersetzung.</div>
+    </div>
+
+    <div class="instr-item">
+      <div class="instr-num">📄</div>
+      <div><strong>Formatierung</strong><br>
+        Automatische Folien-Aufteilung (max. 3 Zeilenpaare), Strophen-/Refrain-Labels, <code>|: :|</code> Wiederholungen, <code>--</code> manuelle Trenner.</div>
+    </div>
+
+    <div class="instr-item">
+      <div class="instr-num">💾</div>
+      <div><strong>Export</strong><br>
+        Ausgabe als .txt speichern (Dateiname = erste Liedzeile) oder in die Zwischenablage kopieren.</div>
+    </div>
+
+    <div class="instr-item">
+      <div class="instr-num">🌙</div>
+      <div><strong>Helles/Dunkles Design</strong><br>
+        Umschaltbar über den Button oben rechts. Die Wahl wird gespeichert.</div>
     </div>
 
   </div>
@@ -891,6 +1059,11 @@ Zeile 2</pre>
       <div class="panel-label">
         🌐 Übersetzung
         <span class="lang-badge" id="badge2"></span>
+        <label class="sync-toggle" title="Struktur automatisch vom Liedtext übernehmen">
+          <input type="checkbox" id="syncToggle">
+          <span class="sync-slider"></span>
+          <span class="sync-label">Sync</span>
+        </label>
         <button id="autoTranslateBtn">✨ KI-Übersetzung</button>
       </div>
       <div class="textarea-wrap">
@@ -912,6 +1085,7 @@ Zeile 1 übersetzt
 Zeile 2 übersetzt</pre>
         </div>
       </div>
+      <div id="sync-line-info" class="sync-line-info" style="display:none"></div>
     </div>
 
     <div class="panel">
@@ -933,7 +1107,9 @@ Zeile 2 übersetzt</pre>
   </div>
 
   <div class="btn-row">
-    <button id="splitBtn">⇅ Zeilen aufteilen</button>
+    <button id="undoBtn" disabled title="Rückgängig (Ctrl+Z)">↩ Undo</button>
+    <button id="redoBtn" disabled title="Wiederherstellen (Ctrl+Y)">↪ Redo</button>
+    <button id="splitBtn" style="display:none">⇅ Zeilen aufteilen</button>
     <button id="clearBtn">✕ Leeren</button>
     <button id="debugBtn">🐛 Copy Debug</button>
   </div>
@@ -959,6 +1135,17 @@ Zeile 2 übersetzt</pre>
     <div class="ai-dialog-footer">
       <button id="aiDialogCancel">Abbrechen</button>
       <button id="aiDialogConfirm">Verstanden — übersetzen</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── OCR/Audio Warn-Dialog ─────────────────────────────── -->
+<div class="ai-dialog-overlay" id="ocrDialogOverlay">
+  <div class="ai-dialog">
+    <div class="ai-dialog-header" id="ocrDialogHeader">⚠️ Hinweis zur Texterkennung</div>
+    <div class="ai-dialog-body" id="ocrDialogBody"></div>
+    <div class="ai-dialog-footer">
+      <button id="ocrDialogConfirm">Verstanden</button>
     </div>
   </div>
 </div>
@@ -1047,8 +1234,8 @@ const STROPHE_RE = /^(strophe|vers|verse|куплет)\s*\d*:?\s*$/i;
 const REFRAIN_RE = /^(refrain|chorus|chor|ref\.?|припев)\s*:?\s*\d*:?\s*$/i;
 const BRIDGE_RE  = /^(bridge|мост)\s*:?\s*$/i;
 const BARE_NUM_RE = /^\d+\.?\s*$/;
-const REPEAT_OPEN_RE  = /^I:\s*/i;
-const REPEAT_CLOSE_RE = /\s*:\|?\s*$|:\s*I\s*$/i;
+const REPEAT_OPEN_RE  = /^(?:I|\|{1,2}):\s*/i;
+const REPEAT_CLOSE_RE = /\s*:(?:\|{1,2})\s*$|:\s*I\s*$/i;
 
 function isRepeatOpen(line)  { return REPEAT_OPEN_RE.test(line.trim()); }
 function isRepeatClose(line) { return REPEAT_CLOSE_RE.test(line.trim()); }
@@ -1135,6 +1322,14 @@ function parseInput(raw) {
     if (isSectionLabel(trimmed)) {
       if (current && current.lines.length > 0) sections.push(current);
       current = { type: getSectionType(trimmed), lines: [] };
+      continue;
+    }
+
+    // Inline-Strophennummer: "1. Text hier" oder "2. Text hier" → neue Strophe + Text als erste Zeile
+    const inlineNum = trimmed.match(/^(\d+)\.\s+(.+)$/);
+    if (inlineNum) {
+      if (current && current.lines.length > 0) sections.push(current);
+      current = { type: 'strophe', lines: [inlineNum[2]] };
       continue;
     }
 
@@ -1403,8 +1598,17 @@ function runFormat() {
     return;
   }
 
-  // Auto-Erkennung: abwechselnde DE/RU Zeilen → "Zeilen aufteilen" vorschlagen
-  if (!transRaw.trim() && detectAlternatingLanguages(songRaw)) {
+  // Auto-Erkennung: abwechselnde DE/RU Zeilen → Split-Button zeigen
+  const isBilingual = !transRaw.trim() && detectAlternatingLanguages(songRaw);
+  const splitBtn = document.getElementById('splitBtn');
+  const wasHidden = splitBtn.style.display === 'none';
+  splitBtn.style.display = isBilingual ? '' : 'none';
+  if (isBilingual && wasHidden) {
+    splitBtn.classList.add('highlight');
+    setTimeout(() => splitBtn.classList.remove('highlight'), 3000);
+  }
+  if (!isBilingual) splitBtn.classList.remove('highlight');
+  if (isBilingual) {
     statusEl.textContent = '💡 Tipp: Klicke "⇅ Zeilen aufteilen" — der Text enthält abwechselnd zwei Sprachen';
     statusEl.className = 'status warn';
   }
@@ -1472,10 +1676,247 @@ function updateOverlays() {
   document.getElementById('translationOverlay').classList.toggle('hidden', document.getElementById('translation').value.length > 0);
 }
 
+// ─── Struktur-Sync ────────────────────────────────────────────────────────────
+
+// Klassifiziert jede Zeile: 'blank', 'label', 'content'
+function classifyLine(line) {
+  const t = line.trim();
+  if (!t) return 'blank';
+  if (isSectionLabel(t) || isSeparator(t)) return 'label';
+  return 'content';
+}
+
+// Wendet Strukturänderungen vom Liedtext auf die Übersetzung an
+let lastSongStructure = null;
+
+function syncStructure() {
+  if (!document.getElementById('syncToggle').checked) return;
+
+  const songText = document.getElementById('song').value;
+  const transEl = document.getElementById('translation');
+  const transText = transEl.value;
+
+  if (!transText.trim()) return;
+
+  // Nur Blank/Content-Zeilen vergleichen (Labels ignorieren)
+  const newStructure = songText.split('\n').map(l => classifyLine(l)).filter(c => c !== 'label');
+
+  if (!lastSongStructure) {
+    lastSongStructure = newStructure;
+    return;
+  }
+
+  const oldStructure = lastSongStructure;
+  lastSongStructure = newStructure;
+
+  // Keine Änderung → nur Resync-Check
+  if (oldStructure.length === newStructure.length &&
+      oldStructure.every((v, i) => v === newStructure[i])) {
+    checkResyncState();
+    return;
+  }
+
+  const transLines = transText.split('\n');
+  const result = [...transLines];
+
+  // Diff: Finde erste Abweichung
+  const minLen = Math.min(oldStructure.length, newStructure.length);
+  let diffIdx = -1;
+  for (let i = 0; i < minLen; i++) {
+    if (oldStructure[i] !== newStructure[i]) { diffIdx = i; break; }
+  }
+  if (diffIdx === -1) diffIdx = minLen;
+
+  if (newStructure.length > oldStructure.length) {
+    const insertCount = newStructure.length - oldStructure.length;
+
+    // Prüfe was eingefügt wurde
+    const insertedTypes = newStructure.slice(diffIdx, diffIdx + insertCount);
+    const allBlank = insertedTypes.every(t => t === 'blank');
+
+    if (allBlank) {
+      // Leerzeilen eingefügt → in Übersetzung spiegeln
+      const insertIdx = Math.min(diffIdx, result.length);
+      for (let i = 0; i < insertCount; i++) {
+        result.splice(insertIdx, 0, '');
+      }
+      console.log(`[Sync] ${insertCount} Leerzeile(n) eingefügt an Position ${insertIdx}`);
+    } else {
+      // Content-Zeile eingefügt (Zeilenumbruch) → Warnung
+      console.log(`[Sync] Zeilenumbruch erkannt an Position ${diffIdx}`);
+      checkResyncState();
+      return;
+    }
+  } else if (newStructure.length < oldStructure.length) {
+    const removeCount = oldStructure.length - newStructure.length;
+    let removed = 0;
+    for (let i = 0; i < removeCount; i++) {
+      const idx = Math.min(diffIdx, result.length - 1);
+      if (idx >= 0 && result[idx].trim() === '') {
+        result.splice(idx, 1);
+        removed++;
+      }
+    }
+    if (removed) console.log(`[Sync] ${removed} Leerzeile(n) entfernt an Position ${diffIdx}`);
+  }
+
+  checkResyncState();
+
+  const newTrans = result.join('\n');
+  if (newTrans !== transText) {
+    console.log(`[Sync] Struktur synchronisiert`);
+    transEl.value = newTrans;
+  }
+}
+
+// Sync aktivieren/deaktivieren
+document.getElementById('syncToggle').addEventListener('change', (e) => {
+  if (e.target.checked) {
+    const songText = document.getElementById('song').value;
+    lastSongStructure = songText.split('\n').map(l => classifyLine(l)).filter(c => c !== 'label');
+    console.log('[Sync] Aktiviert — Struktur gespeichert:', lastSongStructure.length, 'Zeilen (ohne Labels)');
+  } else {
+    lastSongStructure = null;
+    console.log('[Sync] Deaktiviert');
+  }
+});
+
+// Zählt Content-Zeilen (nicht-leer, nicht-Label, nicht-Separator)
+function countContentLines(text) {
+  return text.split('\n').filter(l => {
+    const t = l.trim();
+    return t && !isSectionLabel(t) && !isSeparator(t);
+  }).length;
+}
+
+let syncedContentCount = null; // Gültige Content-Zeilenzahl nach Übersetzung
+
+function showResyncNeeded(songCount, transCount) {
+  const btn = document.getElementById('autoTranslateBtn');
+  btn.classList.add('needs-resync');
+  btn.textContent = '⚠ Neu übersetzen';
+  document.getElementById('translation').classList.add('needs-resync');
+  // Inline-Hinweis unter der Übersetzung
+  const info = document.getElementById('sync-line-info');
+  const diff = songCount - transCount;
+  if (diff > 0) {
+    info.textContent = `⚠ ${diff} Zeile${diff > 1 ? 'n' : ''} mehr im Liedtext als in der Übersetzung`;
+  } else {
+    info.textContent = `⚠ ${-diff} Zeile${-diff > 1 ? 'n' : ''} weniger im Liedtext als in der Übersetzung`;
+  }
+  info.style.display = 'block';
+}
+
+function hideSyncWarning() {
+  const btn = document.getElementById('autoTranslateBtn');
+  btn.classList.remove('needs-resync');
+  btn.textContent = '✨ KI-Übersetzung';
+  document.getElementById('translation').classList.remove('needs-resync');
+  document.getElementById('sync-line-info').style.display = 'none';
+}
+
+function checkResyncState() {
+  if (!document.getElementById('syncToggle').checked || syncedContentCount === null) return;
+  const songCount = countContentLines(document.getElementById('song').value);
+  if (songCount !== syncedContentCount) {
+    showResyncNeeded(songCount, syncedContentCount);
+  } else {
+    hideSyncWarning();
+  }
+}
+
+// ─── Undo/Redo History ────────────────────────────────────────────────────────
+
+const MAX_HISTORY = 100;
+const history = [];
+let historyIdx = -1;
+let historyPaused = false; // Pause während programmatischer Änderungen
+
+function getState() {
+  return {
+    song: document.getElementById('song').value,
+    trans: document.getElementById('translation').value
+  };
+}
+
+function setState(state) {
+  historyPaused = true;
+  document.getElementById('song').value = state.song;
+  document.getElementById('translation').value = state.trans;
+  updateOverlays();
+  runFormat();
+  historyPaused = false;
+}
+
+function pushHistory() {
+  if (historyPaused) return;
+  const state = getState();
+  // Identisch mit aktuellem Zustand → nicht speichern
+  if (historyIdx >= 0) {
+    const cur = history[historyIdx];
+    if (cur.song === state.song && cur.trans === state.trans) return;
+  }
+  // Alles nach aktuellem Index abschneiden (Redo-Pfad verwerfen)
+  history.splice(historyIdx + 1);
+  history.push(state);
+  // Max-Limit
+  if (history.length > MAX_HISTORY) history.shift();
+  historyIdx = history.length - 1;
+  updateUndoRedoButtons();
+}
+
+function undo() {
+  if (historyIdx <= 0) return;
+  historyIdx--;
+  console.log(`[Undo] Zustand ${historyIdx + 1}/${history.length}`);
+  setState(history[historyIdx]);
+  updateUndoRedoButtons();
+}
+
+function redo() {
+  if (historyIdx >= history.length - 1) return;
+  historyIdx++;
+  console.log(`[Redo] Zustand ${historyIdx + 1}/${history.length}`);
+  setState(history[historyIdx]);
+  updateUndoRedoButtons();
+}
+
+function updateUndoRedoButtons() {
+  document.getElementById('undoBtn').disabled = historyIdx <= 0;
+  document.getElementById('redoBtn').disabled = historyIdx >= history.length - 1;
+}
+
+// Initialen Zustand speichern
+pushHistory();
+
+document.getElementById('undoBtn').addEventListener('click', undo);
+document.getElementById('redoBtn').addEventListener('click', redo);
+
+// Keyboard shortcuts: Ctrl+Z = Undo, Ctrl+Y / Ctrl+Shift+Z = Redo
+document.addEventListener('keydown', (e) => {
+  if ((e.ctrlKey || e.metaKey) && !e.altKey) {
+    if (e.key === 'z' && !e.shiftKey) {
+      e.preventDefault();
+      undo();
+    } else if (e.key === 'y' || (e.key === 'z' && e.shiftKey)) {
+      e.preventDefault();
+      redo();
+    }
+  }
+});
+
+// ─── Input Handler ────────────────────────────────────────────────────────────
+
+let historyDebounce = null;
+
 function onInput() {
   updateOverlays();
+  syncStructure();
   clearTimeout(debounceTimer);
   debounceTimer = setTimeout(runFormat, 180);
+  // History nach kurzer Pause speichern (nicht bei jedem Tastendruck)
+  clearTimeout(historyDebounce);
+  historyDebounce = setTimeout(pushHistory, 500);
 }
 
 document.getElementById('song').addEventListener('input', onInput);
@@ -1550,6 +1991,14 @@ document.getElementById('clearBtn').addEventListener('click', () => {
   clearBackup = { song: songEl.value, trans: transEl.value };
   songEl.value = '';
   transEl.value = '';
+
+  // Sync deaktivieren
+  document.getElementById('syncToggle').checked = false;
+  lastSongStructure = null;
+  syncedContentCount = null;
+  hideSyncWarning();
+
+  pushHistory();
   runFormat();
 
   let remaining = 10;
@@ -1602,6 +2051,21 @@ instrToggle.addEventListener('click', () => {
   instrToggle.innerHTML = open
     ? '<span class="arrow" style="transform:rotate(90deg)">&#9654;</span> Anleitung verbergen'
     : '<span class="arrow">&#9654;</span> Anleitung anzeigen';
+  // Anderen Bereich schließen
+  if (open) { featPanel.classList.remove('open'); featToggle.classList.remove('open'); featToggle.innerHTML = '<span class="arrow">&#9654;</span> Funktionen'; }
+});
+
+const featToggle = document.getElementById('featToggle');
+const featPanel  = document.getElementById('features');
+
+featToggle.addEventListener('click', () => {
+  const open = featPanel.classList.toggle('open');
+  featToggle.classList.toggle('open', open);
+  featToggle.innerHTML = open
+    ? '<span class="arrow" style="transform:rotate(90deg)">&#9654;</span> Funktionen verbergen'
+    : '<span class="arrow">&#9654;</span> Funktionen';
+  // Anderen Bereich schließen
+  if (open) { instrPanel.classList.remove('open'); instrToggle.classList.remove('open'); instrToggle.innerHTML = '<span class="arrow">&#9654;</span> Anleitung anzeigen'; }
 });
 
 // ─── KI-Übersetzung Dialog ────────────────────────────────────────────────────
@@ -1640,6 +2104,8 @@ async function runAutoTranslate() {
 
   console.group('[Translate] KI-Übersetzung gestartet');
   const btn = document.getElementById('autoTranslateBtn');
+  btn.classList.remove('needs-resync');
+  document.getElementById('translation').classList.remove('needs-resync');
   btn.textContent = '⏳ Übersetze…';
   btn.disabled = true;
 
@@ -1712,22 +2178,53 @@ async function runAutoTranslate() {
       sections[sectionIdx].lines[lineIdx] = translations[i].translatedText;
     });
 
-    // Reconstruct translation text: one section per block, separated by blank lines
-    // Section labels are omitted (translation textarea doesn't need them — formatter matches by position)
+    // Reconstruct translation text: Mirror the exact line structure of the song
+    // Blank lines at the same positions, pure labels/separators skipped
+    // Repeat markers with content (e.g. "||: Text...") count as content
+    const songLines = songRaw.split('\n');
+    const allTranslated = sections.flatMap(s => s.lines);
+    let tIdx = 0;
     const transLines = [];
-    sections.forEach((section, sIdx) => {
-      if (sIdx > 0) transLines.push('');
-      section.lines.forEach(line => transLines.push(line));
-    });
+
+    for (const songLine of songLines) {
+      const t = songLine.trim();
+      if (!t) {
+        transLines.push('');
+      } else if (isSectionLabel(t) || isSeparator(t)) {
+        // Pure label/separator → skip
+      } else if (isRepeatOpen(t) && !stripRepeatMarkers(t)) {
+        // Pure repeat open marker without content (e.g. "||:" alone) → skip
+      } else if (isRepeatClose(t) && !stripRepeatMarkers(t)) {
+        // Pure repeat close marker without content → skip
+      } else {
+        // Repeat-Open mit Content (z.B. "||: Text...") → Leerzeile davor als Abschnitt-Trenner
+        if (isRepeatOpen(t) && stripRepeatMarkers(t)) {
+          // Nur wenn nicht schon eine Leerzeile davor steht
+          if (transLines.length > 0 && transLines[transLines.length - 1].trim() !== '') {
+            transLines.push('');
+          }
+        }
+        // Content line → insert translation
+        transLines.push(tIdx < allTranslated.length ? allTranslated[tIdx++] : '');
+      }
+    }
 
     const transText = transLines.join('\n');
-    console.log(`[Translate] Übersetzungstext erstellt: ${transText.length} Zeichen, ${transLines.length} Zeilen`);
+    console.log(`[Translate] Übersetzungstext erstellt: ${transText.length} Zeichen, ${transLines.length} Zeilen (gespiegelte Struktur)`);
 
     document.getElementById('translation').value = transText;
     runFormat();
 
     statusEl.textContent += '  —  KI-Übersetzung eingefügt, bitte prüfen!';
     statusEl.className = 'status warn';
+
+    // Sync automatisch aktivieren nach Übersetzung
+    document.getElementById('syncToggle').checked = true;
+    lastSongStructure = document.getElementById('song').value.split('\n').map(l => classifyLine(l)).filter(c => c !== 'label');
+    console.log('[Sync] Auto-aktiviert nach KI-Übersetzung');
+    pushHistory();
+    syncedContentCount = countContentLines(document.getElementById('song').value);
+    hideSyncWarning();
 
   } catch (e) {
     console.error('[Translate] FEHLER:', e);
@@ -1796,13 +2293,12 @@ async function extractTextFromFile(file) {
     const base64 = btoa(new Uint8Array(buf).reduce((s, b) => s + String.fromCharCode(b), ''));
     console.log(`  Base64-Länge: ${base64.length} Zeichen (~${(base64.length * 0.75 / 1024 / 1024).toFixed(2)} MB)`);
     const text = await ocrWithVisionAPI(base64);
-    const cleaned = cleanOcrText(text);
     const duration = ((performance.now() - startTime) / 1000).toFixed(1);
-    console.log(`  OCR fertig in ${duration}s — ${text.length} Zeichen roh, ${cleaned.length} Zeichen bereinigt`);
-    if (cleaned) console.log(`  Bereinigtes Ergebnis:\n${cleaned}`);
+    console.log(`  OCR fertig in ${duration}s — ${text.length} Zeichen erkannt`);
+    if (text) console.log(`  Ergebnis:\n${text}`);
     else console.warn('  Kein Text erkannt!');
     console.groupEnd();
-    return cleaned;
+    return text;
   }
 
   const audioExts = ['mp3', 'wav', 'ogg', 'aac', 'flac', 'aiff', 'm4a', 'wma'];
@@ -1868,13 +2364,12 @@ async function extractTextFromPDF(file) {
 
       console.log(`    Sende an Vision API…`);
       const startTime = performance.now();
-      const ocrRaw = await ocrWithVisionAPI(imageBase64);
-      const ocrText = cleanOcrText(ocrRaw);
+      const ocrText = await ocrWithVisionAPI(imageBase64);
       const duration = ((performance.now() - startTime) / 1000).toFixed(1);
       ocrCount++;
 
-      console.log(`    OCR fertig in ${duration}s — ${ocrRaw.length} roh, ${ocrText.length} bereinigt`);
-      if (ocrText) console.log(`    Bereinigtes Ergebnis:\n${ocrText}`);
+      console.log(`    OCR fertig in ${duration}s — ${ocrText.length} Zeichen erkannt`);
+      if (ocrText) console.log(`    Ergebnis:\n${ocrText}`);
       else console.warn(`    Kein Text erkannt!`);
       console.groupEnd();
 
@@ -2061,13 +2556,22 @@ function cleanOcrText(raw) {
     lines.shift();
   }
 
-  // Pass 0b: Liednummer am Ende der ersten Zeile entfernen (z.B. "Für mich gingst Du nach Golgatha 85")
-  if (lines.length > 0) {
+  // Pass 0b: Titel-Zeile entfernen (Liednummer + Titel)
+  // Formate: "32 – Titel / Untertitel", "85 - Titel", "Nr. 12: Titel", "32 Titel"
+  if (lines.length > 1) {
     const firstLine = lines[0].trim();
-    const numSuffix = firstLine.match(/^(.+?)\s+(\d{1,4})\s*$/);
-    if (numSuffix && numSuffix[1].length > 10) {
-      console.log(`  Liednummer aus erster Zeile entfernt: "${firstLine}" → "${numSuffix[1]}"`);
-      lines[0] = numSuffix[1];
+    // "32 – Text..." oder "32 - Text..." oder "Nr. 12 Text..."
+    if (/^\d{1,4}\s*[–\-:.]\s*.+/.test(firstLine)) {
+      console.log(`  Titel-Zeile entfernt: "${firstLine}"`);
+      lines.shift();
+    }
+    // "Text... 85" (Liednummer am Ende)
+    else {
+      const numSuffix = firstLine.match(/^(.+?)\s+(\d{1,4})\s*$/);
+      if (numSuffix && numSuffix[1].length > 10) {
+        console.log(`  Liednummer aus erster Zeile entfernt: "${firstLine}" → "${numSuffix[1]}"`);
+        lines[0] = numSuffix[1];
+      }
     }
   }
 
@@ -2270,6 +2774,39 @@ async function ocrWithVisionAPI(base64Image) {
 let lastImportedImageBase64 = null; // Für multimodale Gemini-Anfrage
 let lastImportedImageMime = null;
 
+function showOcrWarning(type) {
+  const overlay = document.getElementById('ocrDialogOverlay');
+  const header = document.getElementById('ocrDialogHeader');
+  const body = document.getElementById('ocrDialogBody');
+  if (type === 'audio') {
+    header.textContent = '🎵 Hinweis zur Audio-Transkription';
+    body.innerHTML = `<strong>Audio-Transkriptionen müssen sorgfältig geprüft werden!</strong>
+      <ul>
+        <li>Jede Zeile mit der <strong>Originalaufnahme vergleichen</strong>.</li>
+        <li>Bei undeutlicher Aussprache oder Hintergrundgeräuschen können <strong>Wörter fehlen oder falsch</strong> erkannt werden.</li>
+        <li>Besonders <strong>Namen, Fremdwörter und leise Passagen</strong> prüfen.</li>
+      </ul>`;
+  } else {
+    header.textContent = '🔍 Hinweis zur Texterkennung (OCR)';
+    body.innerHTML = `<strong>OCR-erkannter Text muss sorgfältig geprüft werden!</strong>
+      <ul>
+        <li>Jede Zeile mit dem <strong>Originaldokument vergleichen</strong>.</li>
+        <li>Bei Notenblättern können <strong>Zeilen falsch zusammengesetzt</strong> sein.</li>
+        <li>Besonders <strong>Silbentrennungen, Sonderzeichen und Zeilenumbrüche</strong> prüfen.</li>
+      </ul>`;
+  }
+  overlay.classList.add('open');
+}
+
+function hideOcrWarning() {
+  document.getElementById('ocrDialogOverlay').classList.remove('open');
+}
+
+document.getElementById('ocrDialogConfirm').addEventListener('click', hideOcrWarning);
+document.getElementById('ocrDialogOverlay').addEventListener('click', (e) => {
+  if (e.target === document.getElementById('ocrDialogOverlay')) hideOcrWarning();
+});
+
 function showCleanupButton() {
   document.getElementById('aiCleanupBtn').classList.add('visible');
 }
@@ -2283,6 +2820,7 @@ async function importFileToSong(file) {
   if (!file) return;
   console.log('[Import] importFileToSong gestartet für:', file.name);
   hideCleanupButton();
+  hideOcrWarning();
 
   try {
     const startTime = performance.now();
@@ -2290,19 +2828,30 @@ async function importFileToSong(file) {
     // Bild-Base64 speichern für multimodale Gemini-Anfrage
     const ext = file.name.split('.').pop().toLowerCase();
     const imageExts = ['png', 'jpg', 'jpeg', 'webp', 'bmp', 'gif', 'tiff', 'tif'];
-    if (imageExts.includes(ext) || file.type.startsWith('image/')) {
+    const audioExts = ['mp3', 'wav', 'ogg', 'aac', 'flac', 'aiff', 'm4a', 'wma'];
+    const isImage = imageExts.includes(ext) || file.type.startsWith('image/');
+    const isAudio = audioExts.includes(ext) || file.type.startsWith('audio/');
+
+    if (isImage) {
       const buf = await file.arrayBuffer();
       lastImportedImageBase64 = btoa(new Uint8Array(buf).reduce((s, b) => s + String.fromCharCode(b), ''));
       lastImportedImageMime = file.type || 'image/' + ext;
       console.log(`[Import] Bild-Base64 gespeichert für Gemini (${lastImportedImageMime}, ${(lastImportedImageBase64.length * 0.75 / 1024 / 1024).toFixed(2)} MB)`);
     }
 
-    const text = await extractTextFromFile(file);
+    const rawText = await extractTextFromFile(file);
+    const text = cleanOcrText(rawText);
     const duration = ((performance.now() - startTime) / 1000).toFixed(1);
-    console.log(`[Import] Fertig in ${duration}s — ${text.trim().length} Zeichen extrahiert`);
+    console.log(`[Import] Fertig in ${duration}s — ${rawText.trim().length} Zeichen roh, ${text.trim().length} Zeichen bereinigt`);
     document.getElementById('song').value = text.trim();
     runFormat();
     statusEl.textContent += '  —  Datei importiert: ' + file.name;
+    pushHistory();
+
+    // Warnhinweis bei OCR oder Audio
+    if (isAudio) showOcrWarning('audio');
+    else if (isImage) showOcrWarning('ocr');
+    else if (ext === 'pdf') showOcrWarning('ocr'); // PDF kann OCR beinhalten
 
     // KI-Bereinigen Button anzeigen
     showCleanupButton();
@@ -2459,6 +3008,7 @@ async function runGeminiCleanup() {
     runFormat();
 
     statusEl.textContent += '  —  KI-Bereinigung angewendet';
+    pushHistory();
     statusEl.className = 'status ok';
 
     hideCleanupButton();
@@ -2505,21 +3055,34 @@ document.getElementById('importFile').addEventListener('change', (e) => {
     if (!file) return;
     console.log(`[Import] Datei per Drag & Drop auf #${id}:`, file.name, `(${(file.size / 1024).toFixed(1)} KB)`);
     try {
-      // Für Song-Textarea: Bild speichern + Cleanup-Button zeigen
+      // Für Song-Textarea: Bild speichern + Cleanup-Button + Warnung zeigen
       if (id === 'song') {
         hideCleanupButton();
+        hideOcrWarning();
         const ext = file.name.split('.').pop().toLowerCase();
         const imageExts = ['png', 'jpg', 'jpeg', 'webp', 'bmp', 'gif', 'tiff', 'tif'];
-        if (imageExts.includes(ext) || file.type.startsWith('image/')) {
+        const audioExts = ['mp3', 'wav', 'ogg', 'aac', 'flac', 'aiff', 'm4a', 'wma'];
+        const isImage = imageExts.includes(ext) || file.type.startsWith('image/');
+        const isAudio = audioExts.includes(ext) || file.type.startsWith('audio/');
+        if (isImage) {
           const buf = await file.arrayBuffer();
           lastImportedImageBase64 = btoa(new Uint8Array(buf).reduce((s, b) => s + String.fromCharCode(b), ''));
           lastImportedImageMime = file.type || 'image/' + ext;
         }
       }
-      const text = await extractTextFromFile(file);
+      const rawText = await extractTextFromFile(file);
+      const text = (id === 'song') ? cleanOcrText(rawText) : rawText;
       ta.value = text.trim();
       runFormat();
-      if (id === 'song') showCleanupButton();
+      if (id === 'song') {
+        showCleanupButton();
+        const ext = file.name.split('.').pop().toLowerCase();
+        const audioExts = ['mp3', 'wav', 'ogg', 'aac', 'flac', 'aiff', 'm4a', 'wma'];
+        const imageExts = ['png', 'jpg', 'jpeg', 'webp', 'bmp', 'gif', 'tiff', 'tif'];
+        if (audioExts.includes(ext) || file.type.startsWith('audio/')) showOcrWarning('audio');
+        else if (imageExts.includes(ext) || file.type.startsWith('image/')) showOcrWarning('ocr');
+        else if (ext === 'pdf') showOcrWarning('ocr');
+      }
     } catch (err) {
       console.error(`[Import] Drag & Drop Fehler auf #${id}:`, err);
       statusEl.textContent = 'Import-Fehler: ' + err.message;
@@ -2601,10 +3164,20 @@ document.getElementById('splitBtn').addEventListener('click', () => {
     }
 
     console.log(`[Split] Kompakt-Modus: ${songLines.length} Abschnitte`);
+    const kompaktSong = songLines.join('\n\n');
+    const kompaktTrans = transLines.join('\n\n');
+    document.getElementById('song').value = kompaktSong;
+    document.getElementById('translation').value = kompaktTrans;
 
-    console.log(`[Split] Kompakt-Modus: ${songLines.length} Abschnitte`);
-    document.getElementById('song').value = songLines.join('\n\n');
-    document.getElementById('translation').value = transLines.join('\n\n');
+    // Sync aktivieren
+    if (kompaktTrans.trim()) {
+      document.getElementById('syncToggle').checked = true;
+      lastSongStructure = kompaktSong.split('\n').map(l => classifyLine(l)).filter(c => c !== 'label');
+      syncedContentCount = countContentLines(kompaktSong);
+      console.log('[Sync] Auto-aktiviert nach Zeilen aufteilen (Kompakt)');
+    }
+
+    pushHistory();
     console.groupEnd();
     runFormat();
     return;
@@ -2670,6 +3243,16 @@ document.getElementById('splitBtn').addEventListener('click', () => {
 
   document.getElementById('song').value        = songResult;
   document.getElementById('translation').value = transResult;
+
+  // Sync aktivieren nach Split
+  if (transResult.trim()) {
+    document.getElementById('syncToggle').checked = true;
+    lastSongStructure = songResult.split('\n').map(l => classifyLine(l)).filter(c => c !== 'label');
+    console.log('[Sync] Auto-aktiviert nach Zeilen aufteilen');
+    syncedContentCount = countContentLines(songResult);
+  }
+
+  pushHistory();
   runFormat();
 });
 </script>
