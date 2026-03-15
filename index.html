@@ -541,22 +541,6 @@
   .err-row-missing-trans { color: #f0ad4e; }
   .err-row-hint { margin-top: 3px; color: var(--err-hint); font-size: 0.75rem; }
 
-  /* ── Undo/Redo buttons ── */
-  #undoBtn, #redoBtn {
-    background: transparent;
-    color: var(--btn-color);
-    border: 1px solid var(--btn-border);
-  }
-  #undoBtn:hover:not(:disabled), #redoBtn:hover:not(:disabled) {
-    background: var(--btn-hover-bg);
-    color: var(--btn-hover-color);
-    border-color: var(--btn-hover-color);
-  }
-  #undoBtn:disabled, #redoBtn:disabled {
-    opacity: 0.3;
-    cursor: default;
-  }
-
   /* ── Clear button ── */
   #clearBtn {
     background: transparent;
@@ -818,6 +802,26 @@
     letter-spacing: 0;
   }
 
+  /* ── Header circle buttons (Undo/Redo) ── */
+  .header-circle-btn {
+    background: transparent;
+    border: 1px solid var(--btn-border);
+    color: var(--sub-color);
+    font-size: 0.85rem;
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    transition: all 0.2s;
+    flex-shrink: 0;
+  }
+  .header-circle-btn:hover:not(:disabled) { background: var(--btn-hover-bg); border-color: var(--btn-hover-color); color: var(--btn-hover-color); transform: none; }
+  .header-circle-btn:disabled { opacity: 0.2; cursor: default; }
+
   /* ── Theme toggle ── */
   .theme-toggle {
     background: transparent;
@@ -910,6 +914,8 @@
     <span class="header-icon">🎵</span>
     <span class="header-title">Beamer Formatierer</span>
     <span style="flex:1"></span>
+    <button id="undoBtn" class="header-circle-btn" disabled title="Rückgängig (Ctrl+Z)">↩</button>
+    <button id="redoBtn" class="header-circle-btn" disabled title="Wiederherstellen (Ctrl+Y)">↪</button>
     <button id="themeToggle" class="theme-toggle" title="Helles/Dunkles Design">🌙</button>
   </div>
 
@@ -1107,8 +1113,6 @@ Zeile 2 übersetzt</pre>
   </div>
 
   <div class="btn-row">
-    <button id="undoBtn" disabled title="Rückgängig (Ctrl+Z)">↩ Undo</button>
-    <button id="redoBtn" disabled title="Wiederherstellen (Ctrl+Y)">↪ Redo</button>
     <button id="splitBtn" style="display:none">⇅ Zeilen aufteilen</button>
     <button id="clearBtn">✕ Leeren</button>
     <button id="debugBtn">🐛 Copy Debug</button>
@@ -1230,8 +1234,8 @@ function isSeparator(line) {
   return /^-{2,}\s*$/.test(line.trim());
 }
 
-const STROPHE_RE = /^(strophe|vers|verse|куплет)\s*\d*:?\s*$/i;
-const REFRAIN_RE = /^(refrain|chorus|chor|ref\.?|припев)\s*:?\s*\d*:?\s*$/i;
+const STROPHE_RE = /^(?:(?:erste|zweite|dritte|vierte|fünfte|sechste|siebte|achte|neunte|zehnte|первый|второй|третий|четвёртый|пятый|шестой|седьмой|восьмой|девятый|десятый)\s+)?(?:strophe|vers|verse|куплет|intro|вступление|вступ|solo|gemeinsam|alle|männer|frauen|мужчины|женщины|kanon|канон|gebet|молитва|rezitativ|речитатив|anbetung|поклонение)\s*\d*:?\s*$/i;
+const REFRAIN_RE = /^(refrain|chorus|chor|ref\.?|припев|пр\.?|прип\.?|хор|pre-?chorus|предприпев|zwischenspiel|interlude|проигрыш|coda|кода|tag|ending|outro|заключение|schluss|окончание|finale|wiederholung|повторение|repeat|все\s*вместе|d\.?\s*c\.?|da\s*capo|d\.?\s*s\.?|dal\s*segno)\s*:?\s*\d*:?\s*$/i;
 const BRIDGE_RE  = /^(bridge|мост)\s*:?\s*$/i;
 const BARE_NUM_RE = /^\d+\.?\s*$/;
 const REPEAT_OPEN_RE  = /^(?:I|\|{1,2}):\s*/i;
@@ -1326,7 +1330,7 @@ function parseInput(raw) {
     }
 
     // Inline-Strophennummer: "1. Text hier" oder "2. Text hier" → neue Strophe + Text als erste Zeile
-    const inlineNum = trimmed.match(/^(\d+)\.\s+(.+)$/);
+    const inlineNum = trimmed.match(/^(\d+)\.\s*(.+)$/);
     if (inlineNum) {
       if (current && current.lines.length > 0) sections.push(current);
       current = { type: 'strophe', lines: [inlineNum[2]] };
@@ -1568,17 +1572,29 @@ function buildErrorDetails(songRaw, transRaw) {
 }
 
 function detectAlternatingLanguages(raw) {
-  // Prüft ob der Text abwechselnd DE und RU Zeilen hat
+  // Prüft ob der Text abwechselnd DE und RU Zeilen hat oder beide Sprachen enthält
   const lines = raw.split('\n').map(l => l.trim()).filter(l => l && !isSeparator(l) && !isSectionLabel(l));
   if (lines.length < 4) return false;
+
+  // Methode 1: Zeilen mit beiden Sprachen gemischt (z.B. "Русский текст.Deutsche Zeile")
+  const mixedLines = lines.filter(l => isRussian(l) && /[a-zA-ZäöüßÄÖÜ]{3,}/.test(l));
+  if (mixedLines.length >= 2) return true;
+
+  // Methode 2: Abwechselnde Sprachen Zeile für Zeile
   let switches = 0;
   let lastRu = isRussian(lines[0]);
   for (let i = 1; i < lines.length; i++) {
     const ru = isRussian(lines[i]);
     if (ru !== lastRu) { switches++; lastRu = ru; }
   }
-  // Wenn mindestens 60% der Zeilen einen Sprachwechsel haben → alternierend
-  return switches >= (lines.length - 1) * 0.6;
+  if (switches >= (lines.length - 1) * 0.5) return true;
+
+  // Methode 3: Mindestens 30% der Zeilen sind RU und 30% sind DE
+  const ruCount = lines.filter(l => isRussian(l)).length;
+  const deCount = lines.length - ruCount;
+  if (ruCount >= lines.length * 0.3 && deCount >= lines.length * 0.3) return true;
+
+  return false;
 }
 
 function runFormat() {
@@ -2263,14 +2279,17 @@ async function extractTextFromFile(file) {
     const result = await mammoth.extractRawText({ arrayBuffer: buf });
     console.log('mammoth Ergebnis — Zeichen:', result.value.length, '| Warnungen:', result.messages.length);
     if (result.messages.length) console.warn('mammoth Warnungen:', result.messages);
-    // mammoth fügt \n\n zwischen Paragraphen ein — für Liedtexte zu viele Leerzeilen
-    // Normalisieren: \n\n → \n, aber --- Separatoren als Abschnitt-Trenner behalten
+    // mammoth fügt \n\n zwischen Paragraphen ein — jede Zeile hat eine Leerzeile danach
+    // Normalisieren: Alle \n\n auf \n reduzieren, dann echte Trenner wieder mit Leerzeile versehen
     let text = result.value;
-    // Erst: ---/---- Separatoren durch Platzhalter ersetzen
+    // Alle doppelten Zeilenumbrüche auf einfache reduzieren
+    text = text.replace(/\n\n+/g, '\n');
+    // --- Separatoren mit Leerzeile davor/danach wiederherstellen
     text = text.replace(/^(-{2,})\s*$/gm, '\n$1\n');
-    // Dann: doppelte Leerzeilen auf einfache reduzieren
+    // Strophennummern (1. 2. etc.) → Leerzeile davor
+    text = text.replace(/^(\d+\.)/gm, '\n$1');
+    // Mehrfache Leerzeilen auf eine reduzieren
     text = text.replace(/\n{3,}/g, '\n\n');
-    // Platzhalter zurück: Separator mit Leerzeilen drumherum
     console.log('DOCX nach Normalisierung — Erste 500 Zeichen:', text.trim().slice(0, 500));
     console.groupEnd();
     return text;
@@ -2575,6 +2594,45 @@ function cleanOcrText(raw) {
     }
   }
 
+  // Pass 0c: Zusammengeklebte Zeilen aufbrechen bei Sprachwechsel
+  // z.B. "Да, Иисус.Ja, Jesus." → "Да, Иисус." + "Ja, Jesus."
+  // Auch: "Jesus.Ты, Дух.Du, Geist.Ты, Дух." → 4 Zeilen
+  const splitResult = [];
+  for (const line of lines) {
+    const t = line.trim();
+    if (!t) { splitResult.push(line); continue; }
+
+    // Wiederholtes Splitten: An jeder Stelle wo nach Satzzeichen ein Sprachwechsel stattfindet
+    // Kyrillisch+Satz → Lateinisch ODER Lateinisch+Satz → Kyrillisch
+    const parts = [];
+    let remaining = t;
+    let safety = 0;
+    while (remaining && safety++ < 20) {
+      // Suche: Kyrillischer Text endet mit Satzzeichen, gefolgt von lateinischem Buchstaben
+      let m = remaining.match(/^([\s\S]*?[\u0400-\u04FF][.!?,;:»")\s]*[.!?])\s*([A-ZÄÖÜa-zäöüß][\s\S]*)$/);
+      if (!m) {
+        // Suche: Lateinischer Text endet mit Satzzeichen, gefolgt von kyrillischem Buchstaben
+        m = remaining.match(/^([\s\S]*?[a-zA-ZäöüßÄÖÜ][.!?,;:»")\s]*[.!?])\s*([\u0400-\u04FF][\s\S]*)$/);
+      }
+      if (m && m[1].trim().length > 3 && m[2].trim().length > 3) {
+        parts.push(m[1].trim());
+        remaining = m[2].trim();
+      } else {
+        parts.push(remaining.trim());
+        break;
+      }
+    }
+
+    if (parts.length > 1) {
+      console.log(`  Zeile aufgetrennt (${parts.length} Teile): "${t.slice(0, 50)}..."`);
+      parts.forEach(p => splitResult.push(p));
+    } else {
+      splitResult.push(line);
+    }
+  }
+  lines.length = 0;
+  lines.push(...splitResult);
+
   // Pass 1: Akkorde, OCR-Artefakte, Copyright- und Autorzeilen entfernen
   const COPYRIGHT_RE = /^(?:©|\(c\)|copyright|\d{4}\s+\w+\s+\w+.*(?:verlag|music|publishing|medien|records))/i;
   const AUTHOR_RE = /^(?:text\s+(?:und|&|and)\s+(?:melodie|musik|melody)|melodie\s*:|musik\s*:|text\s*:|автор|слова\s+и\s+муз)/i;
@@ -2606,7 +2664,7 @@ function cleanOcrText(raw) {
   // Pass 2: Inline Section-Labels abtrennen
   // z.B. "Припев: В грех упал, Пусть..." → "Припев:" + "В грех упал, Пусть..."
   // z.B. "Refrain Zeile eins..." → "Refrain" + "Zeile eins..."
-  const INLINE_LABEL_RE = /^((?:strophe|vers|verse|куплет|refrain|chorus|chor|ref\.?|припев|bridge|мост)\s*:?\s*\d*:?)\s+(.+)$/i;
+  const INLINE_LABEL_RE = /^((?:strophe|vers|verse|куплет|refrain|chorus|chor|ref\.?|припев|пр\.?|прип\.?|хор|pre-?chorus|предприпев|bridge|мост|intro|вступление|вступ|outro|заключение|schluss|окончание|finale|zwischenspiel|interlude|проигрыш|coda|кода|wiederholung|повторение|repeat|solo|kanon|канон|gebet|молитва|rezitativ|речитатив|anbetung|поклонение|gemeinsam|alle|männer|frauen|мужчины|женщины|все\s*вместе)\s*:?\s*\d*:?)\s+(.+)$/i;
   const cleaned1b = [];
   for (const line of cleaned1) {
     const m = line.trim().match(INLINE_LABEL_RE);
@@ -2677,7 +2735,7 @@ function cleanOcrText(raw) {
     merged.push(cleaned3[i]);
   }
 
-  // Pass 5: Doppelte/wiederholte erste Zeilen entfernen
+  // Pass 5b: Doppelte erste Zeile entfernen (Titel = erste Strophenzeile)
   if (merged.length >= 2) {
     const a = merged[0]?.trim().replace(/^\d+\.\s*/, '').toLowerCase();
     const b = merged[1]?.trim().replace(/^\d+\.\s*/, '').toLowerCase();
@@ -2692,8 +2750,8 @@ function cleanOcrText(raw) {
   const withBreaks = [];
   for (let i = 0; i < merged.length; i++) {
     const t = merged[i].trim();
-    // Nummerierte Strophe "2.", "3." etc. → Leerzeile davor, Nummer entfernen
-    const numMatch = t.match(/^\d+\.\s+(.+)$/);
+    // Nummerierte Strophe "2. Text" oder "2.Text" → Leerzeile davor, Nummer entfernen
+    const numMatch = t.match(/^\d+\.\s*(.+)$/);
     if (numMatch) {
       if (i > 0 && merged[i - 1]?.trim() !== '') withBreaks.push('');
       console.log(`  Strophen-Nummer entfernt: "${t}" → "${numMatch[1]}"`);
@@ -2773,6 +2831,7 @@ async function ocrWithVisionAPI(base64Image) {
 
 let lastImportedImageBase64 = null; // Für multimodale Gemini-Anfrage
 let lastImportedImageMime = null;
+let lastImportRawText = null; // Unbereinigter Import-Text für Split-Erkennung
 
 function showOcrWarning(type) {
   const overlay = document.getElementById('ocrDialogOverlay');
@@ -2840,6 +2899,7 @@ async function importFileToSong(file) {
     }
 
     const rawText = await extractTextFromFile(file);
+    lastImportRawText = rawText;
     const text = cleanOcrText(rawText);
     const duration = ((performance.now() - startTime) / 1000).toFixed(1);
     console.log(`[Import] Fertig in ${duration}s — ${rawText.trim().length} Zeichen roh, ${text.trim().length} Zeichen bereinigt`);
@@ -3071,6 +3131,7 @@ document.getElementById('importFile').addEventListener('change', (e) => {
         }
       }
       const rawText = await extractTextFromFile(file);
+      if (id === 'song') lastImportRawText = rawText;
       const text = (id === 'song') ? cleanOcrText(rawText) : rawText;
       ta.value = text.trim();
       runFormat();
@@ -3102,44 +3163,128 @@ document.getElementById('splitBtn').addEventListener('click', () => {
   // Separator-Zeilen (---, ----) durch Leerzeilen ersetzen
   const normalized = raw.replace(/^-{2,}\s*$/gm, '');
 
-  // Prüfe ob der Text das "eine Zeile pro Absatz" Format hat (z.B. aus Word-Import)
-  // Anzeichen: viele Einzel-Zeilen-Blöcke und abwechselnde Sprachen
-  const nonEmptyLines = normalized.split('\n').map(l => l.trim()).filter(l => l);
-  const rawBlocks = normalized.split(/\n{2,}/).filter(b => b.trim());
-  const isSingleLinePerBlock = rawBlocks.length > 6 && rawBlocks.every(b => b.trim().split('\n').filter(l => l.trim()).length <= 1);
+  // Prüfe ob der Text zweisprachig ist (DE+RU gemischt)
+  // Wenn ja → Kompakt-Modus: Leerzeilen ignorieren, Zeilen paarweise nach Sprache trennen
+  const nonEmptyLines = normalized.split('\n').map(l => l.trim()).filter(l => l && !isSectionLabel(l));
+  const isBilingualText = detectAlternatingLanguages(nonEmptyLines.join('\n'));
 
   let contentLines;
-  if (isSingleLinePerBlock && detectAlternatingLanguages(nonEmptyLines.join('\n'))) {
-    // Einzel-Zeilen-Format erkannt: Leerzeilen ignorieren, nur Separatoren als Abschnitt-Trenner
-    console.log('[Split] Einzel-Zeilen-Format erkannt — Leerzeilen werden ignoriert, nur --- als Trenner');
+  if (isBilingualText) {
+    console.log('[Split] Zweisprachiger Text erkannt — Kompakt-Modus aktiv');
     contentLines = nonEmptyLines;
   } else {
     contentLines = null; // Normaler Block-basierter Modus
   }
 
   if (contentLines) {
-    // Kompakter Modus: Nutze --- Separatoren als echte Abschnitt-Trenner
-    // Erst den Rohtext in Blöcke aufteilen anhand von --- (nicht anhand von Leerzeilen)
-    const separatorBlocks = raw.split(/^-{2,}\s*$/m).map(b => b.trim()).filter(b => b);
-    console.log(`[Split] ${separatorBlocks.length} Blöcke (getrennt durch ---)`);
+    // Kompakter Modus: Aufteilen anhand von Trennern
+    // Priorität: Wenn Strophennummern (1. 2. 3.) oder Section-Labels vorhanden → diese als Trenner, --- ignorieren
+    // Ansonsten: --- als Trenner
+
+    // Prüfe auf Rohtext (vor Cleanup) ob Strophennummern vorhanden waren
+    const checkText = lastImportRawText || raw;
+    const hasStropheNumbers = /^\d+\.\s*/m.test(checkText) && /^\d+\./m.test(checkText);
+    const hasSectionLabels = checkText.split('\n').some(l => isSectionLabel(l.trim()));
+
+    let markedRaw;
+    if (hasStropheNumbers || hasSectionLabels) {
+      // Strophennummern/Labels erkannt — der Cleanup hat bereits Leerzeilen an den richtigen Stellen
+      // Nutze den bereinigten Text (raw), entferne --- und nutze nur §SPLIT§ an Strophennummern-Positionen
+      // Da die Nummern schon entfernt sind, nutze die Leerzeilen des bereinigten Texts als Trenner
+      console.log('[Split] Strophennummern/Labels als Trenner erkannt');
+      // Alles in einen Block: Leerzeilen und --- entfernen, alle Zeilen fortlaufend paaren
+      markedRaw = raw;
+      // --- durch Leerzeile ersetzen (wird dann ignoriert im Kompakt-Modus)
+      markedRaw = markedRaw.replace(/^-{2,}\s*$/gm, '');
+      // Keine §SPLIT§ Marker — alles als EIN Block
+      // Die Strophen-Grenzen kommen nachher automatisch durch parseInput (Leerzeilen im Ergebnis)
+    } else {
+      // Nur --- als Trenner
+      console.log('[Split] --- als Trenner');
+      markedRaw = raw.replace(/^-{2,}\s*$/gm, '\n§SPLIT§\n');
+      markedRaw = markedRaw.split('\n').map(l => {
+        if (isSectionLabel(l.trim())) return '§SPLIT§';
+        return l;
+      }).join('\n');
+    }
+
+    const separatorBlocks = markedRaw.split('§SPLIT§').map(b => b.trim()).filter(b => b);
+    console.log(`[Split] ${separatorBlocks.length} Blöcke`);
 
     const songLines = [];
     const transLines = [];
 
+    let blockIdx = 0;
     for (const block of separatorBlocks) {
-      // Alle nicht-leeren Zeilen im Block sammeln (Leerzeilen ignorieren)
-      const lines = block.split('\n').map(l => l.trim()).filter(l => l && !isSeparator(l));
-      if (!lines.length) continue;
+      // Zeilen behalten (inkl. Leerzeilen als Abschnitts-Grenzer)
+      const allLines = block.split('\n').map(l => l.trim());
 
       const currentSong = [];
       const currentTrans = [];
 
-      for (let i = 0; i < lines.length; i++) {
-        const line = lines[i];
-        if (isSectionLabel(line)) continue;
+      // Filtere nur Content-Zeilen für die Paarung, aber beachte Leerzeilen als Trenner
+      const contentLines = [];
+      const breakPositions = []; // Indices wo Abschnitt-Grenzen sind
 
+      if (hasStropheNumbers) {
+        // Bei Strophennummern: Nur dort trennen wo im bereinigten Text eine Leerzeile
+        // VOR einer Zeile steht die im Rohtext eine Strophennummer hatte
+        // Vereinfacht: Berechne Strophen-Grenzen aus dem Rohtext
+        const rawLines = (lastImportRawText || raw).split('\n');
+        let contentIdx = 0;
+        let lastWasBreak = false;
+        for (const l of allLines) {
+          if (!l || isSeparator(l)) {
+            // Prüfe ob die nächste nicht-leere Zeile im Rohtext eine Strophennummer hat
+            lastWasBreak = true;
+          } else if (!isSectionLabel(l)) {
+            if (lastWasBreak && contentLines.length > 0) {
+              // Prüfe: Ist dies eine Stelle wo im Rohtext eine nummerierte Strophe begann?
+              const rawIdx = rawLines.findIndex(rl => rl.trim().match(/^\d+\.\s*/) &&
+                rl.trim().replace(/^\d+\.\s*/, '').startsWith(l.slice(0, 15)));
+              if (rawIdx >= 0 || isSectionLabel(l)) {
+                breakPositions.push(contentLines.length);
+              }
+            }
+            contentLines.push(l);
+            lastWasBreak = false;
+          }
+        }
+      } else {
+        // Bei --- Trennung: Jede Leerzeile ist ein Abschnitt-Trenner
+        for (const l of allLines) {
+          if (!l || isSeparator(l)) {
+            if (contentLines.length > 0) breakPositions.push(contentLines.length);
+          } else if (!isSectionLabel(l)) {
+            contentLines.push(l);
+          }
+        }
+      }
+      if (!contentLines.length) { blockIdx++; continue; }
+
+      // Titel-Überspringung: Nur beim allerersten Block und nur wenn --- als Trenner
+      if (blockIdx === 0 && !hasStropheNumbers && !hasSectionLabels && contentLines.length === 1) {
+        const hasRu = isRussian(contentLines[0]);
+        const hasLat = /[a-zA-ZäöüßÄÖÜ]{3,}/.test(contentLines[0]);
+        if (!(hasRu && hasLat)) {
+          console.log(`  Titel übersprungen: "${contentLines[0].slice(0, 50)}"`);
+          blockIdx++;
+          continue;
+        }
+      }
+
+      // Paarweise DE/RU trennen, Leerzeilen-Positionen als Abschnitts-Grenzer
+      let pairIdx = 0;
+      for (let i = 0; i < contentLines.length; i++) {
+        // Abschnitts-Grenze? → aktuellen Block abschließen
+        if (breakPositions.includes(i) && currentSong.length > 0) {
+          songLines.push(currentSong.splice(0).join('\n'));
+          transLines.push(currentTrans.splice(0).join('\n'));
+        }
+
+        const line = contentLines[i];
         const isRu = isRussian(line);
-        const nextLine = (i + 1 < lines.length && !isSectionLabel(lines[i + 1])) ? lines[i + 1] : null;
+        const nextLine = (i + 1 < contentLines.length) ? contentLines[i + 1] : null;
         const nextIsRu = nextLine ? isRussian(nextLine) : null;
 
         if (nextLine && isRu !== nextIsRu) {
@@ -3161,6 +3306,7 @@ document.getElementById('splitBtn').addEventListener('click', () => {
         songLines.push(currentSong.join('\n'));
         transLines.push(currentTrans.join('\n'));
       }
+      blockIdx++;
     }
 
     console.log(`[Split] Kompakt-Modus: ${songLines.length} Abschnitte`);
