@@ -483,6 +483,23 @@
   }
   #debugBtn:hover { color: var(--btn-color); border-color: var(--btn-color); background: transparent; transform: none; }
   #debugBtn.copied { color: var(--btn-color); border-color: var(--btn-color); }
+  #debugBtn.holding {
+    position: relative;
+    overflow: hidden;
+  }
+  #debugBtn.holding::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    height: 3px;
+    background: #5cb85c;
+    animation: debug-fill 1.5s linear forwards;
+  }
+  @keyframes debug-fill {
+    from { width: 0; }
+    to { width: 100%; }
+  }
 
   /* ── Status ── */
   .status {
@@ -980,8 +997,8 @@
 
     <div class="instr-item">
       <div class="instr-num">✨</div>
-      <div><strong>KI-Bereinigung</strong><br>
-        Nach einem Import kann der Text per Gemini-KI bereinigt werden: Zeilen richtig zusammensetzen, Silben verbinden, Refrain wiederholen.</div>
+      <div><strong>KI-Formatierung</strong><br>
+        Nach einem Import kann der Text per Gemini-KI standardisiert werden: Zweisprachige Texte werden in abwechselndes DE/RU Format gebracht, Silben verbunden, Akkorde entfernt. Danach wird automatisch aufgeteilt.</div>
     </div>
 
     <div class="instr-item">
@@ -1036,7 +1053,7 @@
       <div class="panel-label">
         🎼 Liedtext (Original)
         <span class="lang-badge" id="badge1"></span>
-        <button id="aiCleanupBtn">✨ Mit KI bereinigen</button>
+        <button id="aiCleanupBtn">✨ KI-Formatierung</button>
         <button id="importBtn">📂 Datei öffnen</button>
         <input type="file" id="importFile" accept=".txt,.docx,.pdf,.png,.jpg,.jpeg,.webp,.bmp,.gif,.tiff,.tif,.mp3,.wav,.ogg,.aac,.flac,.aiff,.m4a,.wma" style="display:none">
       </div>
@@ -1165,6 +1182,7 @@ document.getElementById('themeToggle').addEventListener('click', () => {
   const isLight = document.body.classList.toggle('light');
   document.getElementById('themeToggle').textContent = isLight ? '☀️' : '🌙';
   localStorage.setItem('theme', isLight ? 'light' : 'dark');
+  logAction('Theme', isLight ? 'Hell' : 'Dunkel');
   console.log('[Theme]', isLight ? 'Hell' : 'Dunkel');
 });
 // Icon initial setzen
@@ -1200,6 +1218,103 @@ if (document.body.classList.contains('light')) document.getElementById('themeTog
   });
   if (mq.matches) panels.forEach(p => p.classList.add('active'));
 })();
+
+// ─── Debug Session Tracker ────────────────────────────────────────────────────
+
+const SESSION_START = new Date();
+const SESSION_ID = Math.random().toString(36).slice(2, 8);
+const debugLog = [];       // Console-Log-Buffer
+const actionLog = [];      // Chronologische Aktions-Liste
+const stateSnapshots = []; // State bei jeder Aktion
+const MAX_LOG = 2000;
+
+// Console überschreiben um alle Ausgaben abzufangen
+const _origLog = console.log.bind(console);
+const _origWarn = console.warn.bind(console);
+const _origError = console.error.bind(console);
+const _origGroup = console.group.bind(console);
+const _origGroupEnd = console.groupEnd.bind(console);
+
+function captureLog(level, args) {
+  const ts = new Date().toLocaleTimeString('de-DE', { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' });
+  const msg = args.map(a => typeof a === 'object' ? JSON.stringify(a).slice(0, 200) : String(a)).join(' ');
+  debugLog.push(`[${ts}] ${level}: ${msg}`);
+  if (debugLog.length > MAX_LOG) debugLog.shift();
+}
+
+console.log = (...args) => { captureLog('LOG', args); _origLog(...args); };
+console.warn = (...args) => { captureLog('WARN', args); _origWarn(...args); };
+console.error = (...args) => { captureLog('ERR', args); _origError(...args); };
+console.group = (...args) => { captureLog('GROUP', args); _origGroup(...args); };
+console.groupEnd = (...args) => { _origGroupEnd(...args); };
+
+function logAction(action, detail) {
+  const ts = new Date().toLocaleTimeString('de-DE', { hour12: false });
+  const entry = { ts, action, detail: detail || '' };
+  actionLog.push(entry);
+  // State-Snapshot
+  stateSnapshots.push({
+    ts,
+    action,
+    song: (document.getElementById('song')?.value || '').slice(0, 100),
+    trans: (document.getElementById('translation')?.value || '').slice(0, 100),
+    songLen: document.getElementById('song')?.value.length || 0,
+    transLen: document.getElementById('translation')?.value.length || 0
+  });
+  _origLog(`[Action] ${action}${detail ? ': ' + detail : ''}`);
+}
+
+function buildDebugReport() {
+  const sep = '='.repeat(60);
+  const now = new Date();
+  const duration = Math.round((now - SESSION_START) / 1000);
+
+  const sections = [];
+
+  // Metadaten
+  sections.push(`${sep}\n### SESSION INFO ###\n${sep}`);
+  sections.push(`Session-ID: ${SESSION_ID}`);
+  sections.push(`Gestartet: ${SESSION_START.toLocaleString('de-DE')}`);
+  sections.push(`Dauer: ${Math.floor(duration / 60)}m ${duration % 60}s`);
+  sections.push(`URL: ${location.href}`);
+  sections.push(`User-Agent: ${navigator.userAgent}`);
+  sections.push(`Aktionen: ${actionLog.length}`);
+  sections.push(`Theme: ${document.body.classList.contains('light') ? 'Hell' : 'Dunkel'}`);
+  sections.push(`Sync: ${document.getElementById('syncToggle')?.checked ? 'An' : 'Aus'}`);
+
+  // Aktions-Log
+  sections.push(`\n${sep}\n### AKTIONS-LOG ###\n${sep}`);
+  if (actionLog.length === 0) {
+    sections.push('(keine Aktionen)');
+  } else {
+    actionLog.forEach((e, i) => {
+      sections.push(`${e.ts}  ${e.action}${e.detail ? ' — ' + e.detail : ''}`);
+    });
+  }
+
+  // State-Verlauf (kompakt)
+  sections.push(`\n${sep}\n### STATE-VERLAUF ###\n${sep}`);
+  stateSnapshots.forEach((s, i) => {
+    sections.push(`[${s.ts}] ${s.action} | Song: ${s.songLen}z "${s.song}..." | Trans: ${s.transLen}z "${s.trans}..."`);
+  });
+
+  // Aktueller Zustand
+  sections.push(`\n${sep}\n### LIEDTEXT (1. Sprache) ###\n${sep}`);
+  sections.push(document.getElementById('song')?.value || '(leer)');
+
+  sections.push(`\n${sep}\n### ÜBERSETZUNG (2. Sprache) ###\n${sep}`);
+  sections.push(document.getElementById('translation')?.value || '(leer)');
+
+  sections.push(`\n${sep}\n### AUSGABE (Formatiert) ###\n${sep}`);
+  sections.push(document.getElementById('output')?.value || '(leer)');
+
+  // Console-Log (letzte 200 Einträge)
+  sections.push(`\n${sep}\n### CONSOLE LOG (letzte ${Math.min(debugLog.length, 200)}) ###\n${sep}`);
+  sections.push(debugLog.slice(-200).join('\n'));
+
+  sections.push(`\n${sep}`);
+  return sections.join('\n');
+}
 
 // ─── Startup-Log ──────────────────────────────────────────────────────────────
 console.log('%c[Beamer Formatierer] App geladen', 'color:#a8d8ea;font-weight:bold;font-size:13px');
@@ -1790,9 +1905,11 @@ document.getElementById('syncToggle').addEventListener('change', (e) => {
   if (e.target.checked) {
     const songText = document.getElementById('song').value;
     lastSongStructure = songText.split('\n').map(l => classifyLine(l)).filter(c => c !== 'label');
+    logAction('Sync', 'Aktiviert');
     console.log('[Sync] Aktiviert — Struktur gespeichert:', lastSongStructure.length, 'Zeilen (ohne Labels)');
   } else {
     lastSongStructure = null;
+    logAction('Sync', 'Deaktiviert');
     console.log('[Sync] Deaktiviert');
   }
 });
@@ -1832,10 +1949,12 @@ function hideSyncWarning() {
 }
 
 function checkResyncState() {
-  if (!document.getElementById('syncToggle').checked || syncedContentCount === null) return;
+  if (!document.getElementById('syncToggle').checked) return;
   const songCount = countContentLines(document.getElementById('song').value);
-  if (songCount !== syncedContentCount) {
-    showResyncNeeded(songCount, syncedContentCount);
+  const transCount = countContentLines(document.getElementById('translation').value);
+  // Warnung nur wenn Song und Translation unterschiedliche Anzahl Content-Zeilen haben
+  if (transCount > 0 && songCount !== transCount) {
+    showResyncNeeded(songCount, transCount);
   } else {
     hideSyncWarning();
   }
@@ -1884,7 +2003,7 @@ function pushHistory() {
 function undo() {
   if (historyIdx <= 0) return;
   historyIdx--;
-  console.log(`[Undo] Zustand ${historyIdx + 1}/${history.length}`);
+  logAction('Undo', `Zustand ${historyIdx + 1}/${history.length}`);
   setState(history[historyIdx]);
   updateUndoRedoButtons();
 }
@@ -1892,7 +2011,7 @@ function undo() {
 function redo() {
   if (historyIdx >= history.length - 1) return;
   historyIdx++;
-  console.log(`[Redo] Zustand ${historyIdx + 1}/${history.length}`);
+  logAction('Redo', `Zustand ${historyIdx + 1}/${history.length}`);
   setState(history[historyIdx]);
   updateUndoRedoButtons();
 }
@@ -1946,6 +2065,7 @@ updateOverlays(); // Initial
 
 document.getElementById('copyBtn').addEventListener('click', () => {
   if (!outputEl.value) { console.log('[Copy] Nichts zu kopieren (Ausgabe leer)'); return; }
+  logAction('Kopieren', `${outputEl.value.length} Zeichen`);
   console.log(`[Copy] Kopiere Ausgabe (${outputEl.value.length} Zeichen)…`);
   navigator.clipboard.writeText(outputEl.value).then(() => {
     console.log('[Copy] Erfolgreich in Zwischenablage kopiert');
@@ -1968,6 +2088,7 @@ document.getElementById('exportBtn').addEventListener('click', () => {
   // Dateiname-sichere Zeichen: Sonderzeichen entfernen, Leerzeichen behalten
   const safeName = firstLine.replace(/[<>:"/\\|?*]/g, '').trim().slice(0, 80) || 'Ausgabe';
 
+  logAction('Export', `${safeName}.txt`);
   console.log(`[Export] Speichere als "${safeName}.txt" (${outputEl.value.length} Zeichen)`);
 
   const blob = new Blob([outputEl.value], { type: 'text/plain;charset=utf-8' });
@@ -2003,6 +2124,7 @@ document.getElementById('clearBtn').addEventListener('click', () => {
 
   if (!songEl.value && !transEl.value) return;
 
+  logAction('Clear', 'Liedtext und Übersetzung geleert');
   console.log('[Clear] Liedtext und Übersetzung geleert (Undo verfügbar)');
   clearBackup = { song: songEl.value, trans: transEl.value };
   songEl.value = '';
@@ -2034,28 +2156,63 @@ document.getElementById('clearBtn').addEventListener('click', () => {
   }, 10000);
 });
 
-document.getElementById('debugBtn').addEventListener('click', () => {
-  console.log('[Debug] Debug-Export gestartet');
-  const sep = '='.repeat(60);
-  const text = [
-    { id: 'song',        label: 'LIEDTEXT (1. Sprache)' },
-    { id: 'translation', label: 'ÜBERSETZUNG (2. Sprache)' },
-    { id: 'output',      label: 'AUSGABE (Formatiert)' },
-  ].map(({ id, label }) =>
-    `${sep}\n### ${label} ###\n${sep}\n${document.getElementById(id).value || '(leer)'}`
-  ).join('\n\n') + '\n' + sep;
+// Debug-Button: Klick = Kopieren, Long-Press (3s) = .txt Download
+(function() {
+  const btn = document.getElementById('debugBtn');
+  let holdTimer = null;
+  let didLongPress = false;
 
-  console.log(`[Debug] Debug-Text Länge: ${text.length} Zeichen`);
-  navigator.clipboard.writeText(text).then(() => {
-    console.log('[Debug] Erfolgreich kopiert');
-    const btn = document.getElementById('debugBtn');
-    btn.innerHTML = '✓ Debug kopiert!';
-    btn.className = 'copied';
-    setTimeout(() => { btn.innerHTML = '🐛 Copy Debug'; btn.className = ''; }, 2000);
-  }).catch(err => {
-    console.error('[Debug] Clipboard-Fehler:', err.message);
+  function startHold() {
+    didLongPress = false;
+    btn.classList.add('holding');
+    holdTimer = setTimeout(() => {
+      didLongPress = true;
+      btn.classList.remove('holding');
+      // Long-Press: .txt Download
+      logAction('Debug-Export', 'als .txt Datei');
+      const report = buildDebugReport();
+      const blob = new Blob([report], { type: 'text/plain;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `debug-report-${SESSION_ID}.txt`;
+      a.click();
+      URL.revokeObjectURL(url);
+      btn.innerHTML = '✓ .txt gespeichert!';
+      btn.className = 'copied';
+      setTimeout(() => { btn.innerHTML = '🐛 Copy Debug'; btn.className = ''; }, 2000);
+    }, 1500);
+  }
+
+  function cancelHold() {
+    clearTimeout(holdTimer);
+    btn.classList.remove('holding');
+  }
+
+  btn.addEventListener('mousedown', startHold);
+  btn.addEventListener('touchstart', (e) => { e.preventDefault(); startHold(); });
+
+  btn.addEventListener('mouseup', cancelHold);
+  btn.addEventListener('mouseleave', cancelHold);
+  btn.addEventListener('touchend', cancelHold);
+  btn.addEventListener('touchcancel', cancelHold);
+
+  btn.addEventListener('click', () => {
+    if (didLongPress) return; // Long-Press hat schon gehandelt
+    // Normaler Klick: Kopieren
+    logAction('Debug-Export', 'in Zwischenablage');
+    const report = buildDebugReport();
+    _origLog(`[Debug] Report Länge: ${report.length} Zeichen`);
+    navigator.clipboard.writeText(report).then(() => {
+      _origLog('[Debug] Erfolgreich kopiert');
+      btn.innerHTML = '✓ Kopiert!';
+      btn.className = 'copied';
+      setTimeout(() => { btn.innerHTML = '🐛 Copy Debug'; btn.className = ''; }, 2000);
+    }).catch(err => {
+      _origError('[Debug] Clipboard-Fehler:', err.message);
+    });
   });
-});
+})();
 
 // ─── Instructions toggle ──────────────────────────────────────────────────────
 const instrToggle = document.getElementById('instrToggle');
@@ -2118,6 +2275,7 @@ async function runAutoTranslate() {
   const songRaw = document.getElementById('song').value.trim();
   if (!songRaw) return;
 
+  logAction('KI-Übersetzung');
   console.group('[Translate] KI-Übersetzung gestartet');
   const btn = document.getElementById('autoTranslateBtn');
   btn.classList.remove('needs-resync');
@@ -2878,6 +3036,7 @@ function hideCleanupButton() {
 async function importFileToSong(file) {
   if (!file) return;
   console.log('[Import] importFileToSong gestartet für:', file.name);
+  logAction('Import', file.name + ' (' + (file.size / 1024).toFixed(1) + ' KB)');
   hideCleanupButton();
   hideOcrWarning();
 
@@ -2926,37 +3085,46 @@ async function importFileToSong(file) {
 
 // ─── Gemini KI-Bereinigung ────────────────────────────────────────────────────
 
-const GEMINI_CLEANUP_PROMPT = `Du bekommst einen OCR-erkannten Liedtext der zerstückelt ist (aus einem Notenblatt gescannt).
-Setze die Zeilen richtig zusammen zu einem sauberen Liedtext.
+const GEMINI_CLEANUP_PROMPT = `Du bekommst einen Liedtext der möglicherweise zweisprachig ist (Deutsch + Russisch) und aus verschiedenen Quellen stammen kann (OCR, Word-Dokument, Audio-Transkription, manuell eingetippt). Der Text kann zerstückelt, falsch formatiert oder unstrukturiert sein.
+
+Deine Aufgabe: Bringe den Text in ein STANDARDISIERTES FORMAT.
 
 STRIKTE REGELN:
-- Gib NUR den bereinigten Liedtext zurück. KEINE Erklärungen, KEIN Markdown, KEINE Codeblöcke.
-- KEINEN Titel oder Überschrift einfügen. Beginne direkt mit dem Text der ersten Strophe.
-- KEINE Strophennummern (1., 2., 3.) einfügen. Strophen werden nur durch Leerzeilen getrennt.
-- Entferne Akkord-Symbole, Copyright-Zeilen, Autorenangaben und Liednummern komplett.
-- Füge getrennte Silben zusammen (z.B. "Gol - ga - tha" → "Golgatha").
+- Gib NUR den formatierten Liedtext zurück. KEINE Erklärungen, KEIN Markdown, KEINE Codeblöcke.
+- KEINEN Titel oder Überschrift.
+- KEINE Strophennummern (1., 2., 3.).
+- Entferne Akkord-Symbole, Copyright-Zeilen, Autorenangaben und Liednummern.
+- Füge getrennte Silben zusammen.
 - Jede Liedzeile soll eine vollständige, sinnvolle Textzeile sein.
-- Trenne Abschnitte (Strophen, Refrain) mit genau EINER Leerzeile.
 
-REFRAIN-REGELN:
-- Schreibe vor den Refrain-Text das Wort "Refrain" auf einer eigenen Zeile.
-- Der Refrain wird nach JEDER Strophe wiederholt. Auch wenn er im Notenblatt nur einmal steht, schreibe ihn nach jeder Strophe erneut hin.
-- Wenn im Original "CHOR:", "Chorus:", "Припев:" steht, ersetze es durch "Refrain".
+ZWEISPRACHIGES FORMAT:
+Wenn der Text ZWEI Sprachen enthält (z.B. Deutsch und Russisch):
+- Schreibe IMMER abwechselnd: eine deutsche Zeile, dann die entsprechende russische Zeile.
+- Die deutsche und russische Zeile müssen inhaltlich zueinander passen (gleiche Bedeutung/Strophenposition).
+- Trenne Strophen/Abschnitte mit genau EINER Leerzeile.
+- Wenn der Text einen Refrain hat, schreibe "Refrain" auf einer eigenen Zeile davor (nur einmal, nicht nach jeder Strophe wiederholen).
 
-BEISPIEL-FORMAT:
-Zeile eins der ersten Strophe,
-Zeile zwei der ersten Strophe.
+EINSPRACHIGES FORMAT:
+Wenn der Text nur EINE Sprache enthält:
+- Trenne Strophen mit einer Leerzeile.
+- Wenn ein Refrain vorhanden ist, schreibe "Refrain" davor.
+
+BEISPIEL ZWEISPRACHIG:
+Ehre sei Dir, Erlöser!
+Честь Тебе, Спаситель!
+Mein Herr und Gott!
+Мой Господь и Бог!
+
+Um die Sünder zu retten,
+Чтоб грешников спасти,
+hast Du die Herrlichkeit verlassen.
+решился Ты славу оставить.
 
 Refrain
-Zeile eins des Refrains,
-Zeile zwei des Refrains.
-
-Zeile eins der zweiten Strophe,
-Zeile zwei der zweiten Strophe.
-
-Refrain
-Zeile eins des Refrains,
-Zeile zwei des Refrains.`;
+Herr, Deine Liebe ist so groß,
+Господи, Твоя любовь велика,
+dass ich sie nie begreifen kann.
+что я не могу её постичь.`;
 
 async function runGeminiCleanup() {
   const songEl = document.getElementById('song');
@@ -2964,9 +3132,10 @@ async function runGeminiCleanup() {
   if (!rawText) return;
 
   const btn = document.getElementById('aiCleanupBtn');
-  btn.textContent = '⏳ Bereinige…';
+  btn.textContent = '⏳ Formatiere…';
   btn.disabled = true;
 
+  logAction('KI-Formatierung');
   console.group('[Gemini Cleanup] Gestartet');
   console.log('Eingabetext:', rawText.length, 'Zeichen');
   console.log('Bild verfügbar:', !!lastImportedImageBase64);
@@ -3067,7 +3236,14 @@ async function runGeminiCleanup() {
     songEl.value = postProcessed;
     runFormat();
 
-    statusEl.textContent += '  —  KI-Bereinigung angewendet';
+    // Wenn der standardisierte Text zweisprachig ist → automatisch Split auslösen
+    if (detectAlternatingLanguages(postProcessed)) {
+      console.log('[Gemini Cleanup] Zweisprachiger Text erkannt — führe automatisch Split aus');
+      document.getElementById('splitBtn').click();
+      statusEl.textContent += '  —  KI-Formatierung + Zeilen aufgeteilt';
+    } else {
+      statusEl.textContent += '  —  KI-Formatierung angewendet';
+    }
     pushHistory();
     statusEl.className = 'status ok';
 
@@ -3076,10 +3252,10 @@ async function runGeminiCleanup() {
   } catch (e) {
     console.error('[Gemini Cleanup] FEHLER:', e);
     console.error('[Gemini Cleanup] Stack:', e.stack);
-    statusEl.textContent = 'KI-Bereinigung fehlgeschlagen: ' + e.message;
+    statusEl.textContent = 'KI-Formatierung fehlgeschlagen: ' + e.message;
     statusEl.className = 'status err';
   } finally {
-    btn.textContent = '✨ Mit KI bereinigen';
+    btn.textContent = '✨ KI-Formatierung';
     btn.disabled = false;
     console.groupEnd();
   }
@@ -3113,6 +3289,7 @@ document.getElementById('importFile').addEventListener('change', (e) => {
     ta.classList.remove('drag-over');
     const file = e.dataTransfer.files[0];
     if (!file) return;
+    logAction('Drag & Drop', `${file.name} auf #${id}`);
     console.log(`[Import] Datei per Drag & Drop auf #${id}:`, file.name, `(${(file.size / 1024).toFixed(1)} KB)`);
     try {
       // Für Song-Textarea: Bild speichern + Cleanup-Button + Warnung zeigen
@@ -3158,6 +3335,7 @@ document.getElementById('splitBtn').addEventListener('click', () => {
   const raw = document.getElementById('song').value.trim();
   if (!raw) return;
 
+  logAction('Split', 'Zeilen aufteilen');
   console.group('[Split] Zeilen aufteilen gestartet');
 
   // Separator-Zeilen (---, ----) durch Leerzeilen ersetzen
