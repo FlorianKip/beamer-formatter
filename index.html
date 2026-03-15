@@ -949,28 +949,26 @@
 
     <div class="instr-item">
       <div class="instr-num">1</div>
-      <div><strong>Liedtext einfügen</strong><br>
-        Links einfügen oder Datei öffnen (TXT, Word, PDF). Abschnitte mit <strong>Leerzeile</strong> trennen.
-        Optional mit <code>Strophe</code>, <code>Refrain</code> oder <code>Bridge</code> beschriften.</div>
+      <div><strong>Lied einfügen</strong><br>
+        Datei öffnen oder Text ins linke Feld einfügen. Word, PDF, Bilder und Audioaufnahmen werden erkannt.</div>
     </div>
 
     <div class="instr-item">
       <div class="instr-num">2</div>
-      <div><strong>Übersetzung einfügen</strong><br>
-        In der Mitte einfügen &mdash; gleiche Struktur. Oder <strong>KI-Übersetzung</strong> nutzen (immer prüfen!).</div>
+      <div><strong>Text prüfen</strong><br>
+        Strophen mit <strong>Leerzeile</strong> trennen. Refrain mit <code>Refrain</code> beschriften. Bei Bedarf: <strong>KI-Formatierung</strong> nutzen.</div>
     </div>
 
     <div class="instr-item">
       <div class="instr-num">3</div>
-      <div><strong>Ausgabe rechts</strong><br>
-        Erscheint automatisch. Pro Folie max. 3 Zeilenpaare. Kopieren oder als .txt speichern.</div>
+      <div><strong>Übersetzung</strong><br>
+        Eigene Lied-Übersetzung einfügen oder per <strong>KI-Übersetzung</strong> erzeugen. Ergebnis immer prüfen!</div>
     </div>
 
     <div class="instr-item">
-      <div class="instr-num">?</div>
-      <div><strong>Tipps</strong><br>
-        <strong>Zeilen aufteilen</strong> trennt abwechselnde DE/RU-Zeilen automatisch.
-        <code>I: Text :|</code> = Wiederholung. <code>--</code> = manueller Folientrenner.</div>
+      <div class="instr-num">4</div>
+      <div><strong>Fertig</strong><br>
+        Die Beamer-Ausgabe erscheint rechts. Kopieren oder als .txt speichern und verwenden.</div>
     </div>
 
   </div>
@@ -979,62 +977,62 @@
 
     <div class="instr-item">
       <div class="instr-num">📂</div>
-      <div><strong>Datei-Import</strong><br>
-        TXT, Word (.docx), PDF und Bilder (JPG, PNG). Auch per Drag &amp; Drop auf die Textfelder.</div>
+      <div><strong>Datei öffnen</strong><br>
+        Word, PDF, Bilder, Audio oder TXT — einfach Datei öffnen oder auf das Feld ziehen. Akkorde und Nummern verschwinden automatisch.</div>
     </div>
 
     <div class="instr-item">
       <div class="instr-num">🔍</div>
-      <div><strong>OCR-Texterkennung</strong><br>
-        Bilder und gescannte PDFs werden per Google Vision API erkannt. Akkorde, Copyright und Liednummern werden automatisch entfernt.</div>
-    </div>
-
-    <div class="instr-item">
-      <div class="instr-num">🎵</div>
-      <div><strong>Audio-Import</strong><br>
-        MP3, WAV, OGG und weitere Formate. Das Lied wird per KI transkribiert (Deutsch &amp; Russisch).</div>
-    </div>
-
-    <div class="instr-item">
-      <div class="instr-num">✨</div>
-      <div><strong>KI-Formatierung</strong><br>
-        Nach einem Import kann der Text per Gemini-KI standardisiert werden: Zweisprachige Texte werden in abwechselndes DE/RU Format gebracht, Silben verbunden, Akkorde entfernt. Danach wird automatisch aufgeteilt.</div>
-    </div>
-
-    <div class="instr-item">
-      <div class="instr-num">🌐</div>
-      <div><strong>KI-Übersetzung</strong><br>
-        Automatische Übersetzung DE↔RU per Google Translate. Die Zeilenstruktur wird gespiegelt.</div>
-    </div>
-
-    <div class="instr-item">
-      <div class="instr-num">🔄</div>
-      <div><strong>Struktur-Sync</strong><br>
-        Wenn aktiviert, werden Leerzeilen-Änderungen im Liedtext automatisch in die Übersetzung übernommen.</div>
+      <div><strong>Bilder &amp; Audio</strong><br>
+        Fotos von Liedblättern werden gelesen. Audioaufnahmen werden als Text erkannt. Bitte das Ergebnis immer prüfen!</div>
     </div>
 
     <div class="instr-item">
       <div class="instr-num">⇅</div>
       <div><strong>Zeilen aufteilen</strong><br>
-        Erkennt abwechselnde DE/RU-Zeilen und trennt sie automatisch in Liedtext + Übersetzung.</div>
+        Wenn Deutsch und Russisch gemischt im Text stehen, erscheint dieser Button. Er trennt die Sprachen automatisch.</div>
+    </div>
+
+    <div class="instr-item">
+      <div class="instr-num">✨</div>
+      <div><strong>KI-Formatierung</strong><br>
+        Falls der Text nach dem Import durcheinander ist: Dieser Button lässt die KI den Text neu ordnen und sauber aufteilen.</div>
+    </div>
+
+    <div class="instr-item">
+      <div class="instr-num">🌐</div>
+      <div><strong>KI-Übersetzung</strong><br>
+        Übersetzt den Liedtext automatisch (Deutsch ↔ Russisch). Bitte das Ergebnis Zeile für Zeile prüfen!</div>
+    </div>
+
+    <div class="instr-item">
+      <div class="instr-num">🔄</div>
+      <div><strong>Sync</strong><br>
+        Wenn aktiv, werden Absatz-Änderungen im Liedtext automatisch auch in der Übersetzung gemacht. Schaltet sich bei Bedarf von selbst ein.</div>
     </div>
 
     <div class="instr-item">
       <div class="instr-num">📄</div>
-      <div><strong>Formatierung</strong><br>
-        Automatische Folien-Aufteilung (max. 3 Zeilenpaare), Strophen-/Refrain-Labels, <code>|: :|</code> Wiederholungen, <code>--</code> manuelle Trenner.</div>
+      <div><strong>Folien-Ausgabe</strong><br>
+        Die Ausgabe rechts erscheint automatisch. Pro Folie stehen maximal 3 Zeilenpaare. Strophe/Refrain werden automatisch beschriftet.</div>
     </div>
 
     <div class="instr-item">
       <div class="instr-num">💾</div>
-      <div><strong>Export</strong><br>
-        Ausgabe als .txt speichern (Dateiname = erste Liedzeile) oder in die Zwischenablage kopieren.</div>
+      <div><strong>Speichern &amp; Kopieren</strong><br>
+        Ausgabe kopieren oder als .txt speichern. <code>--</code> im Liedtext erzwingt einen Folientrenner, <code>|: :|</code> markiert Wiederholungen.</div>
     </div>
 
     <div class="instr-item">
-      <div class="instr-num">🌙</div>
-      <div><strong>Helles/Dunkles Design</strong><br>
-        Umschaltbar über den Button oben rechts. Die Wahl wird gespeichert.</div>
+      <div class="instr-num">↩</div>
+      <div><strong>Rückgängig</strong><br>
+        Jede Änderung lässt sich rückgängig machen — mit den Buttons oben rechts oder Strg+Z / Strg+Y.</div>
+    </div>
+
+    <div class="instr-item">
+      <div class="instr-num">🐛</div>
+      <div><strong>Fehlerbericht</strong><br>
+        Bei Problemen: Button kurz drücken = kopieren, lang drücken = als Datei speichern. Enthält alle Infos für den Support.</div>
     </div>
 
   </div>
