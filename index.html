@@ -1402,6 +1402,7 @@ window.addEventListener('unhandledrejection', (e) => {
   console.error('[UNHANDLED PROMISE REJECTION]', e.reason);
 });
 
+
 // ─── API Rate Limiting ────────────────────────────────────────────────────────
 
 function createLimiter(maxCalls, windowMs, cooldownMs) {
@@ -1447,6 +1448,10 @@ async function fetchWithRetry(url, options = {}, maxRetries = 2) {
     try {
       const response = await fetch(url, { ...options, signal: controller.signal });
       clearTimeout(timeoutId);
+      if (response.status === 401) throw new Error('API-Key ungültig (401). Bitte prüfen.');
+      if (response.status === 403) throw new Error('Zugriff verweigert (403). API-Key-Einschränkungen prüfen.');
+      if (response.status === 401) throw new Error('API-Key ungültig (401). Bitte prüfen.');
+      if (response.status === 403) throw new Error('Zugriff verweigert (403). API-Key-Einschränkungen prüfen.');
       if (response.ok || response.status < 500) return response;
       // 5xx → Retry
       if (attempt < maxRetries) {
@@ -1984,7 +1989,8 @@ function runFormat() {
     // Das finale '-----' zählt nicht als Folie, also: Anzahl '--' Separatoren (nicht '-----') = Folienanzahl
     const slideCount = lines.filter(l => l.type === 'sep' && l.text === '--').length + 1;
     const slideEl = document.getElementById('slide-count');
-    slideEl.textContent = slideCount > 0 ? `— ${slideCount} Folie${slideCount !== 1 ? 'n' : ''}` : '';
+    const incomplete = songRaw.trim() && !transRaw.trim() ? ' (unvollständig)' : '';
+    slideEl.textContent = slideCount > 0 ? `— ${slideCount} Folie${slideCount !== 1 ? 'n' : ''}${incomplete}` : '';
     const slideInfo = slideCount > 0 ? `  •  ${slideCount} Folie${slideCount !== 1 ? 'n' : ''}` : '';
 
     // Mobile: Ausgabe-Tab hervorheben wenn nicht aktiv
@@ -2213,6 +2219,7 @@ function checkResyncState() {
 // ─── Undo/Redo History ────────────────────────────────────────────────────────
 
 const MAX_HISTORY = 100;
+const MAX_HISTORY_BYTES = 5 * 1024 * 1024; // 5 MB
 const history = [];
 let historyIdx = -1;
 let historyPaused = false; // Pause während programmatischer Änderungen
@@ -2244,8 +2251,14 @@ function pushHistory() {
   // Alles nach aktuellem Index abschneiden (Redo-Pfad verwerfen)
   history.splice(historyIdx + 1);
   history.push(state);
-  // Max-Limit
+  // Max-Einträge-Limit
   if (history.length > MAX_HISTORY) history.shift();
+  // Byte-Limit (5 MB) – älteste States entfernen bis es passt
+  while (history.length > 1) {
+    const totalBytes = history.reduce((sum, s) => sum + s.song.length + s.trans.length, 0) * 2;
+    if (totalBytes <= MAX_HISTORY_BYTES) break;
+    history.shift();
+  }
   historyIdx = history.length - 1;
   updateUndoRedoButtons();
 }
@@ -2294,9 +2307,12 @@ document.addEventListener('keydown', (e) => {
 
 let historyDebounce = null;
 
+let syncDebounceTimer = null;
+
 function onInput() {
   updateOverlays();
-  syncStructure();
+  clearTimeout(syncDebounceTimer);
+  syncDebounceTimer = setTimeout(syncStructure, 100);
   clearTimeout(debounceTimer);
   debounceTimer = setTimeout(runFormat, 180);
   clearTimeout(historyDebounce);
@@ -2330,11 +2346,10 @@ document.getElementById('copyBtn').addEventListener('click', () => {
 document.getElementById('exportBtn').addEventListener('click', () => {
   if (!outputEl.value) { console.log('[Export] Nichts zu exportieren (Ausgabe leer)'); return; }
 
-  // Erste inhaltliche Zeile des Liedtexts als Dateiname
-  const songRaw = document.getElementById('song').value;
-  const firstLine = songRaw.split('\n').map(l => l.trim())
-    .find(l => l && !isSectionLabel(l) && !isSeparator(l) && !isRepeatOpen(l)) || 'Ausgabe';
-  // Dateiname-sichere Zeichen: Sonderzeichen entfernen, Leerzeichen behalten
+  // Dateiname: Rohtext-Titel (vor Cleanup) oder erste Liedzeile
+  const nameSource = lastImportRawText || document.getElementById('song').value;
+  const firstLine = nameSource.split('\n').map(l => l.trim())
+    .find(l => l && !isSectionLabel(l) && !isSeparator(l) && !isRepeatOpen(l) && !/^\d+\.\s/.test(l)) || 'Ausgabe';
   const safeName = firstLine.replace(/[<>:"/\\|?*]/g, '').trim().slice(0, 80) || 'Ausgabe';
 
   logAction('Export', `${safeName}.txt`);
@@ -3613,13 +3628,16 @@ document.getElementById('importFile').addEventListener('change', (e) => {
 // Drag & Drop auf beide Textareas
 ['song', 'translation'].forEach(id => {
   const ta = document.getElementById(id);
+  const panel = ta.closest('.panel');
 
-  ta.addEventListener('dragover', (e) => {
+  panel.addEventListener('dragover', (e) => {
     e.preventDefault();
     ta.classList.add('drag-over');
   });
-  ta.addEventListener('dragleave', () => ta.classList.remove('drag-over'));
-  ta.addEventListener('drop', async (e) => {
+  panel.addEventListener('dragleave', (e) => {
+    if (!panel.contains(e.relatedTarget)) ta.classList.remove('drag-over');
+  });
+  panel.addEventListener('drop', async (e) => {
     e.preventDefault();
     ta.classList.remove('drag-over');
     const file = e.dataTransfer.files[0];
