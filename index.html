@@ -2526,7 +2526,7 @@ async function runAutoTranslate() {
   if (!songRaw) return;
 
   logAction('KI-Übersetzung');
-  console.group('[Translate] KI-Übersetzung gestartet');
+  console.group('[Translate] KI-Übersetzung via Gemini gestartet');
   const btn = document.getElementById('autoTranslateBtn');
   btn.classList.remove('needs-resync');
   document.getElementById('translation').classList.remove('needs-resync');
@@ -2536,109 +2536,98 @@ async function runAutoTranslate() {
   try {
     const songContentLines = songRaw.split('\n').map(l => l.trim())
       .filter(l => l && !isSectionLabel(l) && !isSeparator(l) && !isRepeatOpen(l) && !isRepeatClose(l));
-    const sourceLang = detectLanguage(songContentLines) === 'russian' ? 'ru' : 'de';
-    const targetLang = sourceLang === 'de' ? 'ru' : 'de';
+    const sourceLang = detectLanguage(songContentLines) === 'russian' ? 'Russisch' : 'Deutsch';
+    const targetLang = sourceLang === 'Deutsch' ? 'Russisch' : 'Deutsch';
     console.log(`[Translate] Sprache erkannt: ${sourceLang} → ${targetLang}`);
-    console.log(`[Translate] Content-Zeilen (ohne Labels/Separators): ${songContentLines.length}`);
 
-    // Parse into sections — this gives us the clean lines per section,
-    // with repeat markers already stripped, matching exactly what the formatter expects
-    const sections = parseInput(songRaw);
-    console.log(`[Translate] ${sections.length} Abschnitte geparst`);
+    if (!checkRateLimit('gemini')) { console.groupEnd(); return; }
 
-    // Collect all translatable lines across sections, remembering where they belong
-    const toTranslate = []; // { sectionIdx, lineIdx, text }
-    sections.forEach((section, sIdx) => {
-      section.lines.forEach((line, lIdx) => {
-        if (!isSeparator(line)) {
-          toTranslate.push({ sectionIdx: sIdx, lineIdx: lIdx, text: line });
-        }
-      });
+    const prompt = `Übersetze diesen christlichen Liedtext von ${sourceLang} nach ${targetLang}. Es handelt sich um ein Gemeindelied mit biblischem Inhalt.
+
+STRIKTE REGELN:
+- Behalte EXAKT die gleiche Anzahl Zeilen. Jede Zeile im Original muss genau einer Zeile in der Übersetzung entsprechen.
+- Behalte Leerzeilen an den gleichen Positionen (als Strophen-Trenner).
+- Übersetze den SINN, nicht Wort für Wort. Es ist ein Lied — die Übersetzung soll natürlich und poetisch klingen.
+- Gib NUR die Übersetzung zurück, KEINE Erklärungen, KEIN Markdown.
+- Überspringe Section-Labels (Strophe, Refrain, etc.) — gib sie NICHT in der Übersetzung aus.
+
+Hier ist der Liedtext:
+
+${songRaw}`;
+
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite:generateContent?key=${GOOGLE_API_KEY}`;
+    console.log('[Translate] Sende an Gemini…');
+    const startTime = performance.now();
+
+    const response = await fetchWithRetry(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        contents: [{ parts: [{ text: prompt }] }]
+      })
     });
 
-    console.log(`[Translate] ${toTranslate.length} Zeilen zur Übersetzung gesammelt`);
-    if (!toTranslate.length) { console.warn('[Translate] Keine Zeilen gefunden!'); console.groupEnd(); return; }
-
-    if (!checkRateLimit('translate')) { console.groupEnd(); return; }
-
-    // Batch translate
-    console.log(`[Translate] Sende an Google Translate API (${toTranslate.length} Zeilen, ${sourceLang} → ${targetLang})…`);
-    const translateStart = performance.now();
-    const response = await fetchWithRetry(
-      `https://translation.googleapis.com/language/translate/v2?key=${GOOGLE_API_KEY}`,
-      {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          q: toTranslate.map(l => l.text),
-          source: sourceLang,
-          target: targetLang,
-          format: 'text'
-        })
-      }
-    );
-    const translateDuration = ((performance.now() - translateStart) / 1000).toFixed(1);
-    console.log(`[Translate] API Response: ${response.status} ${response.statusText} (${translateDuration}s)`);
+    const duration = ((performance.now() - startTime) / 1000).toFixed(1);
+    console.log(`[Translate] Gemini Response: ${response.status} ${response.statusText} (${duration}s)`);
 
     if (!response.ok) {
       const err = await response.json();
-      console.error('[Translate] API Fehler-Response:', err);
+      console.error('[Translate] Gemini Fehler:', err);
       throw new Error(err.error?.message || response.statusText);
     }
 
     const data = await response.json();
-    const translations = data.data.translations;
-    console.log(`[Translate] ${translations.length} Übersetzungen erhalten`);
+    const candidate = data.candidates?.[0];
+    if (!candidate) throw new Error('Keine Antwort von Gemini');
 
-    if (translations.length !== toTranslate.length) {
-      console.error(`[Translate] MISMATCH: ${toTranslate.length} gesendet, ${translations.length} erhalten!`);
-    }
+    let transText = candidate.content?.parts?.map(p => p.text).join('').trim();
+    if (!transText) throw new Error('Leere Übersetzung');
 
-    // Log each translation pair
-    toTranslate.forEach(({ text }, i) => {
-      console.log(`  [${i}] "${text}" → "${translations[i]?.translatedText || '???'}"`);
-    });
+    // Nachbearbeitung: Markdown-Codeblöcke entfernen
+    transText = transText.replace(/^```\w*\n?/gm, '').replace(/\n?```$/gm, '').trim();
 
-    // Write translated text back into section structure
-    toTranslate.forEach(({ sectionIdx, lineIdx }, i) => {
-      sections[sectionIdx].lines[lineIdx] = translations[i].translatedText;
-    });
-
-    // Reconstruct translation text: Mirror the exact line structure of the song
-    // Blank lines at the same positions, pure labels/separators skipped
-    // Repeat markers with content (e.g. "||: Text...") count as content
+    // Zeilenstruktur des Liedtexts auf die Übersetzung anwenden
+    // Gemini sollte die gleiche Zeilenanzahl liefern, aber zur Sicherheit:
     const songLines = songRaw.split('\n');
-    const allTranslated = sections.flatMap(s => s.lines);
-    let tIdx = 0;
-    const transLines = [];
+    const transRawLines = transText.split('\n');
+    const finalTransLines = [];
+    let transIdx = 0;
 
     for (const songLine of songLines) {
       const t = songLine.trim();
       if (!t) {
-        transLines.push('');
+        // Leerzeile → spiegeln
+        finalTransLines.push('');
+        // Überspringe auch Leerzeile in Gemini-Output falls vorhanden
+        if (transIdx < transRawLines.length && !transRawLines[transIdx].trim()) transIdx++;
       } else if (isSectionLabel(t) || isSeparator(t)) {
-        // Pure label/separator → skip
+        // Label/Separator → überspringen
       } else if (isRepeatOpen(t) && !stripRepeatMarkers(t)) {
-        // Pure repeat open marker without content (e.g. "||:" alone) → skip
-      } else if (isRepeatClose(t) && !stripRepeatMarkers(t)) {
-        // Pure repeat close marker without content → skip
+        // Reiner Repeat-Marker → überspringen
       } else {
-        // Repeat-Open mit Content (z.B. "||: Text...") → Leerzeile davor als Abschnitt-Trenner
+        // Content-Zeile → nächste Gemini-Übersetzungszeile nehmen
+        // Überspringe Leerzeilen in Gemini-Output
+        while (transIdx < transRawLines.length && !transRawLines[transIdx].trim()) transIdx++;
         if (isRepeatOpen(t) && stripRepeatMarkers(t)) {
-          // Nur wenn nicht schon eine Leerzeile davor steht
-          if (transLines.length > 0 && transLines[transLines.length - 1].trim() !== '') {
-            transLines.push('');
+          if (finalTransLines.length > 0 && finalTransLines[finalTransLines.length - 1].trim() !== '') {
+            finalTransLines.push('');
           }
         }
-        // Content line → insert translation
-        transLines.push(tIdx < allTranslated.length ? allTranslated[tIdx++] : '');
+        finalTransLines.push(transIdx < transRawLines.length ? transRawLines[transIdx++] : '');
       }
     }
 
-    const transText = transLines.join('\n');
-    console.log(`[Translate] Übersetzungstext erstellt: ${transText.length} Zeichen, ${transLines.length} Zeilen (gespiegelte Struktur)`);
+    const finalText = finalTransLines.join('\n');
+    console.log(`[Translate] Übersetzung: ${finalText.length} Zeichen, ${finalTransLines.length} Zeilen`);
 
-    document.getElementById('translation').value = transText;
+    // Log Vergleich
+    const songContent = songLines.filter(l => l.trim() && !isSectionLabel(l.trim()) && !isSeparator(l.trim()));
+    const transContent = finalTransLines.filter(l => l.trim());
+    songContent.forEach((line, i) => {
+      console.log(`  [${i}] "${line}" → "${transContent[i] || '???'}"`);
+    });
+
+    document.getElementById('translation').value = finalText;
     runFormat();
 
     statusEl.textContent += '  —  KI-Übersetzung eingefügt, bitte prüfen!';
