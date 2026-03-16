@@ -3438,6 +3438,7 @@ const GEMINI_CLEANUP_PROMPT = `Du bekommst einen Liedtext der möglicherweise zw
 Deine Aufgabe: Bringe den Text in ein STANDARDISIERTES FORMAT.
 
 STRIKTE REGELN:
+- ÜBERSETZE NIEMALS den Text! Behalte die Originalsprache(n) EXAKT bei. Ein russischer Text MUSS russisch bleiben, ein deutscher Text MUSS deutsch bleiben.
 - Gib NUR den formatierten Liedtext zurück. KEINE Erklärungen, KEIN Markdown, KEINE Codeblöcke.
 - KEINEN Titel oder Überschrift.
 - KEINE Strophennummern (1., 2., 3.).
@@ -3454,8 +3455,9 @@ Wenn der Text ZWEI Sprachen enthält (z.B. Deutsch und Russisch):
 
 EINSPRACHIGES FORMAT:
 Wenn der Text nur EINE Sprache enthält:
+- Belasse den Text KOMPLETT in der Originalsprache. NICHT übersetzen!
 - Trenne Strophen mit einer Leerzeile.
-- Wenn ein Refrain vorhanden ist, schreibe "Refrain" davor.
+- Wenn ein Refrain vorhanden ist, schreibe "Refrain" davor (bei russischen Texten: "Припев").
 
 BEISPIEL ZWEISPRACHIG:
 Ehre sei Dir, Erlöser!
