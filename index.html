@@ -3,6 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<script>/* Theme sofort setzen um FOUC zu vermeiden */if(localStorage.getItem('theme')==='light')document.documentElement.classList.add('light')</script>
 <title>Liedtext Formatierer</title>
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -70,7 +71,7 @@
     --debug-border: #2a3040;
   }
 
-  body.light {
+  .light {
     --bg: #f0f2f5;
     --text: #222;
     --header-bg: linear-gradient(135deg, #d0e8f5 0%, #f0f2f5 100%);
@@ -138,6 +139,7 @@
     background: var(--bg);
     color: var(--text);
     min-height: 100vh;
+    min-height: 100dvh;
     transition: background 0.3s, color 0.3s;
   }
 
@@ -210,6 +212,7 @@
   .instructions.open {
     max-height: 600px;
     opacity: 1;
+    overflow: auto;
   }
 
   .instr-item {
@@ -335,6 +338,7 @@
     .editor-grid .panel textarea,
     .editor-grid .panel #output-display {
       height: 55vh;
+      height: 55dvh;
     }
 
     /* Buttons kleiner auf Mobile */
@@ -610,7 +614,7 @@
     border-color: #f0a040;
     animation: resync-pulse 1.5s ease-in-out infinite;
   }
-  body.light #autoTranslateBtn.needs-resync {
+  .light #autoTranslateBtn.needs-resync {
     background: #fff3e0;
     color: #e07000;
     border-color: #e07000;
@@ -623,6 +627,13 @@
   #translation.needs-resync {
     border-color: #f0a040 !important;
   }
+  #translation.sync-locked {
+    opacity: 0.55;
+    cursor: default;
+    border-style: dashed;
+    border-color: #2a7a2a88;
+  }
+  #translation.sync-locked::placeholder { opacity: 0; }
   .sync-line-info {
     font-size: 0.75rem;
     color: #f0a040;
@@ -802,7 +813,7 @@
     border-color: #5cb85c;
     animation: split-glow 1s ease-in-out 3;
   }
-  body.light #splitBtn.highlight {
+  .light #splitBtn.highlight {
     background: #e8f5e8;
     color: #2a7a2a;
     border-color: #2a7a2a;
@@ -968,6 +979,26 @@
     color: rgba(255,255,255,0.5);
     font-size: 0.75rem;
     text-align: center;
+  }
+
+  /* ── Print ── */
+  @media print {
+    body { background: #fff !important; color: #000 !important; }
+    .header, .btn-row, .mobile-tabs, .instructions, .instructions-toggle,
+    #error-detail, .processing-overlay, .textarea-overlay,
+    .ai-dialog-overlay, #debugBtn, #themeToggle, .status { display: none !important; }
+    .editor-grid { display: block !important; }
+    .editor-grid .panel { display: none !important; }
+    .editor-grid .panel:last-child { display: block !important; }
+    #output-display {
+      background: #fff !important; color: #000 !important;
+      border: none !important; height: auto !important;
+      font-size: 12pt !important;
+    }
+    .out-song { color: #000 !important; }
+    .out-trans { color: #333 !important; font-style: italic; }
+    .out-label { color: #000 !important; font-weight: bold !important; }
+    .out-sep { border-color: #ccc !important; }
   }
 </style>
 </head>
@@ -1237,19 +1268,21 @@ Zeile 2 übersetzt</pre>
 <script>
 // ─── Theme ────────────────────────────────────────────────────────────────────
 (function() {
+  // Klasse wird bereits im <head> auf <html> gesetzt, hier auf <body> synchronisieren
   const saved = localStorage.getItem('theme');
   if (saved === 'light') document.body.classList.add('light');
 })();
 
 document.getElementById('themeToggle').addEventListener('click', () => {
   const isLight = document.body.classList.toggle('light');
+  document.documentElement.classList.toggle('light', isLight);
   document.getElementById('themeToggle').textContent = isLight ? '☀️' : '🌙';
   localStorage.setItem('theme', isLight ? 'light' : 'dark');
   logAction('Theme', isLight ? 'Hell' : 'Dunkel');
   console.log('[Theme]', isLight ? 'Hell' : 'Dunkel');
 });
 // Icon initial setzen
-if (document.body.classList.contains('light')) document.getElementById('themeToggle').textContent = '☀️';
+if (document.documentElement.classList.contains('light')) document.getElementById('themeToggle').textContent = '☀️';
 
 // ─── Mobile Tabs ──────────────────────────────────────────────────────────────
 (function() {
@@ -1380,6 +1413,7 @@ function buildDebugReport() {
 }
 
 // ─── Startup-Log ──────────────────────────────────────────────────────────────
+function escHtml(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 console.log('%c[Beamer Formatierer] App geladen', 'color:#a8d8ea;font-weight:bold;font-size:13px');
 console.log('[Init] User-Agent:', navigator.userAgent);
 console.log('[Init] URL:', location.href);
@@ -1448,8 +1482,6 @@ async function fetchWithRetry(url, options = {}, maxRetries = 2) {
     try {
       const response = await fetch(url, { ...options, signal: controller.signal });
       clearTimeout(timeoutId);
-      if (response.status === 401) throw new Error('API-Key ungültig (401). Bitte prüfen.');
-      if (response.status === 403) throw new Error('Zugriff verweigert (403). API-Key-Einschränkungen prüfen.');
       if (response.status === 401) throw new Error('API-Key ungültig (401). Bitte prüfen.');
       if (response.status === 403) throw new Error('Zugriff verweigert (403). API-Key-Einschränkungen prüfen.');
       if (response.ok || response.status < 500) return response;
@@ -1725,7 +1757,9 @@ function format(songRaw, transRaw) {
     const emitSlides = (lbl) => {
       if (lbl) out.push({ type: 'label', text: lbl });
       slides.forEach((slide, slIdx) => {
-        slide.forEach(([primary, secondary]) => {
+        slide.forEach(item => {
+          if (!Array.isArray(item)) return; // Separator überspringen
+          const [primary, secondary] = item;
           const primaryErr   = primary   === 'LIEDTEXT FEHLT';
           const secondaryErr = secondary === 'ÜBERSETZUNG FEHLT';
           out.push({ type: primaryErr   ? 'err' : 'song',  text: primary });
@@ -2021,14 +2055,15 @@ function runFormat() {
       const errRows = buildErrorDetails(songRaw, transRaw);
       hinweisHtml += errRows.map(({ label, icon, missingIn, n }) => {
         const lineWord = n === 1 ? 'Zeile fehlt' : 'Zeilen fehlen';
+        const safeLabel = escHtml(label);
         const hint = missingIn === 'Übersetzung'
           ? `In der <strong>Übersetzung</strong> (Mitte) ${n === 1 ? 'fehlt 1 Zeile' : `fehlen ${n} Zeilen`} — bitte ergänzen.`
           : `Im <strong>Liedtext</strong> (links) ${n === 1 ? 'fehlt 1 Zeile' : `fehlen ${n} Zeilen`} — bitte ergänzen.`;
         return `<div class="err-row">
           <div class="err-row-icon">${icon}</div>
           <div class="err-row-content">
-            <div class="err-row-section">${label}</div>
-            <div class="err-row-missing-${missingIn === 'Übersetzung' ? 'trans' : 'song'}">${n} ${lineWord} in der ${missingIn}</div>
+            <div class="err-row-section">${safeLabel}</div>
+            <div class="err-row-missing-${missingIn === 'Übersetzung' ? 'trans' : 'song'}">${n} ${lineWord} in der ${escHtml(missingIn)}</div>
             <div class="err-row-hint">${hint}</div>
           </div>
         </div>`;
@@ -2041,7 +2076,7 @@ function runFormat() {
         `<div class="err-row">
           <div class="err-row-icon">${w.icon}</div>
           <div class="err-row-content">
-            <div class="err-row-section" style="color:var(--btn-hover-color)">${w.msg}</div>
+            <div class="err-row-section" style="color:var(--btn-hover-color)">${escHtml(w.msg)}</div>
           </div>
         </div>`
       ).join('');
@@ -2157,16 +2192,39 @@ function syncStructure() {
 }
 
 // Sync aktivieren/deaktivieren
+function setSyncLocked(locked) {
+  const transEl = document.getElementById('translation');
+  if (locked) {
+    transEl.readOnly = true;
+    transEl.classList.add('sync-locked');
+  } else {
+    transEl.readOnly = false;
+    transEl.classList.remove('sync-locked');
+  }
+}
+
 document.getElementById('syncToggle').addEventListener('change', (e) => {
   if (e.target.checked) {
     const songText = document.getElementById('song').value;
     lastSongStructure = songText.split('\n').map(l => classifyLine(l)).filter(c => c !== 'label');
+    setSyncLocked(true);
     logAction('Sync', 'Aktiviert');
     console.log('[Sync] Aktiviert — Struktur gespeichert:', lastSongStructure.length, 'Zeilen (ohne Labels)');
   } else {
     lastSongStructure = null;
+    setSyncLocked(false);
     logAction('Sync', 'Deaktiviert');
     console.log('[Sync] Deaktiviert');
+  }
+});
+
+// Klick ins Übersetzungsfeld deaktiviert Sync
+document.getElementById('translation').addEventListener('mousedown', () => {
+  const toggle = document.getElementById('syncToggle');
+  if (toggle.checked) {
+    toggle.checked = false;
+    toggle.dispatchEvent(new Event('change'));
+    console.log('[Sync] Deaktiviert durch Klick ins Übersetzungsfeld');
   }
 });
 
@@ -2269,6 +2327,7 @@ function undo() {
   logAction('Undo', `Zustand ${historyIdx + 1}/${history.length}`);
   setState(history[historyIdx]);
   updateUndoRedoButtons();
+  resetClearButton();
 }
 
 function redo() {
@@ -2320,7 +2379,15 @@ function onInput() {
 }
 
 document.getElementById('song').addEventListener('input', onInput);
-document.getElementById('translation').addEventListener('input', onInput);
+document.getElementById('translation').addEventListener('input', function() {
+  // Split-Button sofort ausblenden wenn Übersetzung bearbeitet wird
+  if (this.value.trim()) {
+    const sb = document.getElementById('splitBtn');
+    sb.style.display = 'none';
+    sb.classList.remove('highlight');
+  }
+  onInput();
+});
 // Auch bei focus/blur prüfen (z.B. nach programmatischem Setzen)
 document.getElementById('song').addEventListener('focus', updateOverlays);
 document.getElementById('translation').addEventListener('focus', updateOverlays);
@@ -2367,6 +2434,15 @@ document.getElementById('exportBtn').addEventListener('click', () => {
 let clearBackup = null;
 let clearTimer = null;
 let clearCountdown = null;
+
+function resetClearButton() {
+  if (clearBackup) {
+    clearTimeout(clearTimer);
+    clearInterval(clearCountdown);
+    clearBackup = null;
+    document.getElementById('clearBtn').textContent = '✕ Leeren';
+  }
+}
 
 document.getElementById('clearBtn').addEventListener('click', () => {
   const songEl = document.getElementById('song');
@@ -2454,7 +2530,7 @@ document.getElementById('clearBtn').addEventListener('click', () => {
   }
 
   btn.addEventListener('mousedown', startHold);
-  btn.addEventListener('touchstart', (e) => { e.preventDefault(); startHold(); });
+  btn.addEventListener('touchstart', startHold, { passive: true });
 
   btn.addEventListener('mouseup', cancelHold);
   btn.addEventListener('mouseleave', cancelHold);
@@ -2462,7 +2538,7 @@ document.getElementById('clearBtn').addEventListener('click', () => {
   btn.addEventListener('touchcancel', cancelHold);
 
   btn.addEventListener('click', () => {
-    if (didLongPress) return; // Long-Press hat schon gehandelt
+    if (didLongPress) { didLongPress = false; return; } // Long-Press hat schon gehandelt, Flag zurücksetzen
     // Normaler Klick: Kopieren
     logAction('Debug-Export', 'in Zwischenablage');
     const report = buildDebugReport();
@@ -2601,7 +2677,7 @@ async function runAutoTranslate() {
     const targetLang = sourceLang === 'Deutsch' ? 'Russisch' : 'Deutsch';
     console.log(`[Translate] Sprache erkannt: ${sourceLang} → ${targetLang}`);
 
-    if (!checkRateLimit('gemini')) { console.groupEnd(); return; }
+    if (!checkRateLimit('gemini')) throw new Error('Rate Limit — bitte kurz warten');
 
     const prompt = `Übersetze diesen christlichen Liedtext von ${sourceLang} nach ${targetLang}. Es handelt sich um ein Gemeindelied mit biblischem Inhalt.
 
@@ -2702,6 +2778,7 @@ ${songRaw}`;
 
     // Sync automatisch aktivieren nach Übersetzung
     document.getElementById('syncToggle').checked = true;
+    setSyncLocked(true);
     lastSongStructure = document.getElementById('song').value.split('\n').map(l => classifyLine(l)).filter(c => c !== 'label');
     console.log('[Sync] Auto-aktiviert nach KI-Übersetzung');
     pushHistory();
@@ -2860,6 +2937,14 @@ async function extractTextFromPDF(file) {
       console.log(`    Sende an Vision API…`);
       const startTime = performance.now();
       const ocrText = await ocrWithVisionAPI(imageBase64);
+
+      // Erstes OCR-Bild für Gemini Cleanup speichern
+      if (!lastImportedImageBase64) {
+        lastImportedImageBase64 = imageBase64;
+        lastImportedImageMime = 'image/png';
+        console.log(`    Erstes OCR-Bild für Gemini gespeichert (~${(imageBase64.length * 0.75 / 1024 / 1024).toFixed(2)} MB)`);
+      }
+
       const duration = ((performance.now() - startTime) / 1000).toFixed(1);
       ocrCount++;
 
@@ -2955,10 +3040,11 @@ async function transcribeAudioWithGemini(file) {
   if (buf.byteLength > 20 * 1024 * 1024) {
     console.error('Audio zu groß (max 20 MB für inline)');
     console.groupEnd();
+    hideProcessing();
     throw new Error('Audio-Datei zu groß (max. 20 MB). Bitte eine kürzere oder komprimierte Datei verwenden.');
   }
 
-  if (!checkRateLimit('gemini')) { console.groupEnd(); throw new Error('Rate Limit'); }
+  if (!checkRateLimit('gemini')) { console.groupEnd(); hideProcessing(); throw new Error('Rate Limit — bitte kurz warten'); }
 
   const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite:generateContent?key=${GOOGLE_API_KEY}`;
   console.log('Gemini API Request an:', url.replace(GOOGLE_API_KEY, '***'));
@@ -3042,6 +3128,8 @@ function isOcrSingleChar(line) {
   if (!t || t.length > 2) return false;
   if (isSectionLabel(t)) return false;
   if (/^\d+\.?$/.test(t)) return false;
+  // Einzelne Buchstaben die in Liedtexten als Wörter vorkommen bewahren (z.B. "O", "I", "А")
+  if (/^[OIАЯоя]$/i.test(t)) return false;
   return true;
 }
 
@@ -3851,6 +3939,7 @@ document.getElementById('splitBtn').addEventListener('click', () => {
     // Sync aktivieren
     if (kompaktTrans.trim()) {
       document.getElementById('syncToggle').checked = true;
+      setSyncLocked(true);
       lastSongStructure = kompaktSong.split('\n').map(l => classifyLine(l)).filter(c => c !== 'label');
       syncedContentCount = countContentLines(kompaktSong);
       console.log('[Sync] Auto-aktiviert nach Zeilen aufteilen (Kompakt)');
@@ -3926,6 +4015,7 @@ document.getElementById('splitBtn').addEventListener('click', () => {
   // Sync aktivieren nach Split
   if (transResult.trim()) {
     document.getElementById('syncToggle').checked = true;
+    setSyncLocked(true);
     lastSongStructure = songResult.split('\n').map(l => classifyLine(l)).filter(c => c !== 'label');
     console.log('[Sync] Auto-aktiviert nach Zeilen aufteilen');
     syncedContentCount = countContentLines(songResult);
