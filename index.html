@@ -3,139 +3,164 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<script>/* Theme sofort setzen um FOUC zu vermeiden */if(localStorage.getItem('theme')==='light')document.documentElement.classList.add('light')</script>
+<script>/* Theme sofort setzen um FOUC zu vermeiden. System-Default, gespeicherte Praeferenz gewinnt */(function(){var t=localStorage.getItem('theme');if(!t)t=(window.matchMedia&&window.matchMedia('(prefers-color-scheme: light)').matches)?'light':'dark';if(t==='light')document.documentElement.classList.add('light')})();</script>
 <title>Liedtext Formatierer</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
 
+  /* ── Design-System Tokens (Dark Theme) ── */
   :root {
-    --bg: #1a1a2e;
-    --text: #eee;
-    --header-bg: linear-gradient(135deg, #0f3460 0%, #1a1a2e 100%);
-    --header-border: #2d3561;
-    --title-color: #a8d8ea;
-    --sub-color: #6a8a9a;
-    --instr-bg: #16213e;
-    --instr-border: #2d3561;
-    --instr-text: #99b0c0;
-    --instr-num-bg: #0f3460;
-    --instr-num-border: #a8d8ea44;
-    --instr-num-color: #a8d8ea;
-    --instr-strong: #c8e8f5;
-    --instr-code-bg: #0a2540;
-    --instr-code-color: #7ec8e3;
-    --panel-label: #aaa;
-    --badge-de-bg: #1e4d6e; --badge-de-color: #7ec8e3;
-    --badge-ru-bg: #4d1e1e; --badge-ru-color: #e37e7e;
-    --ta-bg: #16213e;
-    --ta-color: #e0e0e0;
-    --ta-border: #2d3561;
-    --ta-focus: #a8d8ea;
-    --out-bg: #0a2540;
-    --out-border: #1a4060;
-    --out-label: #f0c060;
-    --out-song: #7ec8e3;
-    --out-trans: #b8e6a0;
-    --out-sep: #3a5a7a;
-    --out-err: #e37e7e;
-    --legend-color: #666;
-    --btn-border: #2d3561;
-    --btn-color: #6a8a9a;
-    --btn-hover-bg: #1e2a3a;
-    --btn-hover-color: #a8d8ea;
-    --status-color: #888;
-    --err-box-border: #7a5500;
-    --err-box-bg: #1a1200;
-    --err-header-bg: #6b4a00;
-    --err-header-color: #f5d580;
-    --err-row-bg: #1a1500;
-    --err-row-border: #5a4000;
-    --err-hint: #8a7040;
-    --translate-color: #8a6ec0;
-    --translate-border: #4a3570;
-    --translate-hover-bg: #1e1430;
-    --dialog-bg: #16213e;
-    --dialog-header-bg: #2a1a50;
-    --dialog-header-color: #b89ee0;
-    --dialog-body-color: #b0b8cc;
-    --dialog-strong: #e0d0ff;
-    --dialog-footer-border: #2d3561;
-    --overlay-border: #2d3561;
-    --overlay-text: #6a8a9a;
-    --overlay-strong: #a8d8ea;
-    --overlay-hint: #4a5a6a;
-    --overlay-example: #3a4a5a;
-    --overlay-drag-bg: rgba(168,216,234,0.05);
-    --mini-btn-border: #2a3040;
-    --debug-color: #3a4a5a;
-    --debug-border: #2a3040;
+    --bg: #161917;
+    --text: #E8EAE7;
+    --header-bg: #1D211F;
+    --header-border: rgba(255,255,255,0.06);
+    --title-color: #E8EAE7;
+    --sub-color: #9BA09C;
+    --instr-bg: #1D211F;
+    --instr-border: rgba(255,255,255,0.07);
+    --instr-text: #9BA09C;
+    --instr-num-bg: rgba(124,172,190,0.15);
+    --instr-num-border: transparent;
+    --instr-num-color: #BBD3D9;
+    --instr-strong: #DDE0DD;
+    --instr-code-bg: #242925;
+    --instr-code-color: #BBD3D9;
+    --panel-label: #9BA09C;
+    --badge-de-bg: rgba(124,172,190,0.18); --badge-de-color: #BBD3D9;
+    --badge-ru-bg: rgba(188,191,177,0.18); --badge-ru-color: #DADCD3;
+    --ta-bg: #1D211F;
+    --ta-color: #E8EAE7;
+    --ta-border: #2E3430;
+    --ta-focus: #7CACBE;
+    --out-bg: #1D211F;
+    --out-border: #2E3430;
+    --out-label: #D9A961;
+    --out-song: #BBD3D9;
+    --out-trans: #9CC2A4;
+    --out-sep: #3A403C;
+    --out-err: #D98B8B;
+    --legend-color: #7B817D;
+    --btn-border: #2E3430;
+    --btn-color: #9BA09C;
+    --btn-hover-bg: #242925;
+    --btn-hover-color: #BBD3D9;
+    --status-color: #7B817D;
+    --err-box-border: #5A4A28;
+    --err-box-bg: #262012;
+    --err-header-bg: #3A3018;
+    --err-header-color: #E8C98A;
+    --err-row-bg: #221D10;
+    --err-row-border: #4A3D22;
+    --err-hint: #B09468;
+    --translate-color: #BBD3D9;
+    --translate-border: rgba(124,172,190,0.45);
+    --translate-hover-bg: rgba(124,172,190,0.12);
+    --dialog-bg: #1D211F;
+    --dialog-header-bg: rgba(124,172,190,0.15);
+    --dialog-header-color: #BBD3D9;
+    --dialog-body-color: #9BA09C;
+    --dialog-strong: #DDE0DD;
+    --dialog-footer-border: #2E3430;
+    --overlay-border: #3A403C;
+    --overlay-text: #7B817D;
+    --overlay-strong: #BBD3D9;
+    --overlay-hint: #5F6561;
+    --overlay-example: #5F6561;
+    --overlay-drag-bg: rgba(124,172,190,0.08);
+    --mini-btn-border: #2E3430;
+    --debug-color: #5F6561;
+    --debug-border: #2E3430;
+    /* Status + Akzent (Corporate) */
+    --ok: #7FAF8C;
+    --warn: #D9A961;
+    --err: #D98B8B;
+    --accent: #7CACBE;
+    --accent-strong: #6493A4;
+    --accent-deep: #BBD3D9;
+    --focus-ring: rgba(124,172,190,0.25);
+    --shadow-card: 0 6px 20px rgba(0,0,0,0.25);
+    --shadow-floating: 0 14px 38px rgba(0,0,0,0.5);
   }
 
+  /* ── Design-System Tokens (Light Theme) ── */
   .light {
-    --bg: #f0f2f5;
-    --text: #222;
-    --header-bg: linear-gradient(135deg, #d0e8f5 0%, #f0f2f5 100%);
-    --header-border: #c8d8e8;
-    --title-color: #1a5a8a;
-    --sub-color: #6a8a9a;
-    --instr-bg: #fff;
-    --instr-border: #d0d8e0;
-    --instr-text: #556;
-    --instr-num-bg: #d0e8f5;
-    --instr-num-border: #1a5a8a44;
-    --instr-num-color: #1a5a8a;
-    --instr-strong: #1a3a5a;
-    --instr-code-bg: #e8f0f8;
-    --instr-code-color: #1a6a9a;
-    --panel-label: #556;
-    --badge-de-bg: #d0e8f5; --badge-de-color: #1a5a8a;
-    --badge-ru-bg: #f5d0d0; --badge-ru-color: #8a1a1a;
-    --ta-bg: #fff;
-    --ta-color: #222;
-    --ta-border: #c8d8e8;
-    --ta-focus: #1a5a8a;
-    --out-bg: #f8fafc;
-    --out-border: #c8d8e8;
-    --out-label: #b8860b;
-    --out-song: #1a6a9a;
-    --out-trans: #2a7a2a;
-    --out-sep: #b0c0d0;
-    --out-err: #c03030;
-    --legend-color: #888;
-    --btn-border: #c8d8e8;
-    --btn-color: #556;
-    --btn-hover-bg: #e0e8f0;
-    --btn-hover-color: #1a5a8a;
-    --status-color: #888;
-    --err-box-border: #e0c080;
-    --err-box-bg: #fff8e8;
-    --err-header-bg: #f0d870;
-    --err-header-color: #5a4000;
-    --err-row-bg: #fffaf0;
-    --err-row-border: #e0c080;
-    --err-hint: #8a7040;
-    --translate-color: #6a40b0;
-    --translate-border: #b0a0d0;
-    --translate-hover-bg: #f0e8ff;
-    --dialog-bg: #fff;
-    --dialog-header-bg: #e8e0f8;
-    --dialog-header-color: #5a30a0;
-    --dialog-body-color: #444;
-    --dialog-strong: #5a30a0;
-    --dialog-footer-border: #e0d8e8;
-    --overlay-border: #c8d8e8;
-    --overlay-text: #888;
-    --overlay-strong: #1a5a8a;
-    --overlay-hint: #aaa;
-    --overlay-example: #bbb;
-    --overlay-drag-bg: rgba(26,90,138,0.05);
-    --mini-btn-border: #c8d8e8;
-    --debug-color: #aaa;
-    --debug-border: #c8d8e8;
+    --bg: #F6F7F5;
+    --text: #111412;
+    --header-bg: #FFFFFF;
+    --header-border: rgba(20,25,23,0.055);
+    --title-color: #111412;
+    --sub-color: #5F6561;
+    --instr-bg: #FFFFFF;
+    --instr-border: rgba(20,25,23,0.055);
+    --instr-text: #5F6561;
+    --instr-num-bg: #E8F0F2;
+    --instr-num-border: transparent;
+    --instr-num-color: #4F7E8F;
+    --instr-strong: #242925;
+    --instr-code-bg: #EEF0ED;
+    --instr-code-color: #4F7E8F;
+    --panel-label: #5F6561;
+    --badge-de-bg: #E8F0F2; --badge-de-color: #4F7E8F;
+    --badge-ru-bg: #ECEDE8; --badge-ru-color: #686D61;
+    --ta-bg: #FFFFFF;
+    --ta-color: #111412;
+    --ta-border: #E1E4E1;
+    --ta-focus: #7CACBE;
+    --out-bg: #FFFFFF;
+    --out-border: #E1E4E1;
+    --out-label: #C28A3A;
+    --out-song: #4F7E8F;
+    --out-trans: #5F8D6A;
+    --out-sep: #C9CDCA;
+    --out-err: #C95D5D;
+    --legend-color: #7B817D;
+    --btn-border: #E1E4E1;
+    --btn-color: #5F6561;
+    --btn-hover-bg: #EEF0ED;
+    --btn-hover-color: #4F7E8F;
+    --status-color: #7B817D;
+    --err-box-border: #EAD9BC;
+    --err-box-bg: #FAF4E8;
+    --err-header-bg: #F5E9D2;
+    --err-header-color: #8A6A2F;
+    --err-row-bg: #FCF8EF;
+    --err-row-border: #EAD9BC;
+    --err-hint: #94774A;
+    --translate-color: #6493A4;
+    --translate-border: #BBD3D9;
+    --translate-hover-bg: #F3F7F8;
+    --dialog-bg: #FFFFFF;
+    --dialog-header-bg: #E8F0F2;
+    --dialog-header-color: #4F7E8F;
+    --dialog-body-color: #5F6561;
+    --dialog-strong: #242925;
+    --dialog-footer-border: #EEF0ED;
+    --overlay-border: #DADCD3;
+    --overlay-text: #7B817D;
+    --overlay-strong: #4F7E8F;
+    --overlay-hint: #9BA09C;
+    --overlay-example: #C9CDCA;
+    --overlay-drag-bg: rgba(124,172,190,0.08);
+    --mini-btn-border: #E1E4E1;
+    --debug-color: #9BA09C;
+    --debug-border: #E1E4E1;
+    /* Status + Akzent (Corporate) */
+    --ok: #5F8D6A;
+    --warn: #C28A3A;
+    --err: #C95D5D;
+    --accent: #7CACBE;
+    --accent-strong: #6493A4;
+    --accent-deep: #4F7E8F;
+    --focus-ring: rgba(124,172,190,0.25);
+    --shadow-card: 0 6px 20px rgba(20,25,23,0.055);
+    --shadow-floating: 0 14px 38px rgba(20,25,23,0.12);
   }
 
   body {
-    font-family: 'Segoe UI', Arial, sans-serif;
+    font-family: 'Inter', ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
     background: var(--bg);
     color: var(--text);
     min-height: 100vh;
@@ -147,7 +172,7 @@
   .header {
     background: var(--header-bg);
     border-bottom: 1px solid var(--header-border);
-    padding: 28px 32px 24px;
+    padding: 24px 32px 20px;
   }
 
   .header-top {
@@ -158,22 +183,25 @@
   }
 
   .header-icon {
-    font-size: 2rem;
+    color: var(--accent);
     line-height: 1;
+    display: flex;
+    align-items: center;
   }
+  .header-icon .icon { width: 26px; height: 26px; stroke-width: 1.8; }
 
   .header-title {
-    font-size: 1.6rem;
+    font-size: 1.45rem;
     font-weight: 700;
     color: var(--title-color);
-    letter-spacing: 0.5px;
+    letter-spacing: -0.2px;
   }
 
   .header-sub {
     font-size: 0.85rem;
     color: var(--sub-color);
     margin-bottom: 20px;
-    padding-left: 48px;
+    padding-left: 44px;
   }
 
   .instructions-toggle {
@@ -221,17 +249,18 @@
     gap: 10px;
     background: var(--instr-bg);
     border: 1px solid var(--instr-border);
-    border-radius: 8px;
+    border-radius: 14px;
     padding: 10px 14px;
     font-size: 0.8rem;
     color: var(--instr-text);
     line-height: 1.5;
+    box-shadow: var(--shadow-card);
   }
 
   .instr-num {
     flex-shrink: 0;
-    width: 22px;
-    height: 22px;
+    width: 24px;
+    height: 24px;
     background: var(--instr-num-bg);
     border: 1px solid var(--instr-num-border);
     border-radius: 50%;
@@ -243,6 +272,7 @@
     color: var(--instr-num-color);
     margin-top: 1px;
   }
+  .instr-num .icon { width: 13px; height: 13px; stroke-width: 2; }
 
   .instr-item strong { color: var(--instr-strong); }
   .instr-item code {
@@ -277,30 +307,36 @@
     /* ── Mobile Tabs ── */
     .mobile-tabs {
       display: flex;
-      gap: 0;
+      gap: 4px;
       margin-bottom: 10px;
-      border-radius: 8px;
-      overflow: hidden;
+      border-radius: 999px;
+      padding: 4px;
+      background: var(--ta-bg);
       border: 1px solid var(--ta-border);
     }
     .mobile-tab {
       flex: 1;
-      padding: 10px 0;
+      padding: 9px 0;
       text-align: center;
       font-size: 0.78rem;
       font-weight: 600;
       cursor: pointer;
-      background: var(--ta-bg);
+      background: transparent;
       color: var(--btn-color);
       border: none;
-      border-radius: 0;
+      border-radius: 999px;
       transition: all 0.15s;
       letter-spacing: 0;
       position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
     }
+    .mobile-tab .icon { width: 15px; height: 15px; }
     .mobile-tab.active {
-      background: var(--ta-focus);
-      color: var(--bg);
+      background: var(--accent);
+      color: #fff;
     }
     .mobile-tab:hover:not(.active) {
       background: var(--btn-hover-bg);
@@ -313,8 +349,8 @@
     /* Ausgabe-Tab pulsiert wenn neue Ausgabe bereit */
     .mobile-tab.has-update:not(.active) {
       animation: tab-pulse 1.5s ease-in-out infinite;
-      background: #1a6a3a;
-      color: #b8e6a0;
+      background: var(--ok);
+      color: #fff;
     }
 
     @keyframes tab-pulse {
@@ -331,6 +367,7 @@
       gap: 4px;
       justify-content: flex-end;
     }
+    .editor-grid .panel .panel-label > .icon { display: none; }
     .editor-grid .panel .panel-label .lang-badge,
     .editor-grid .panel .panel-label .slide-count { display: none; }
 
@@ -381,8 +418,8 @@
 
   .lang-badge {
     font-size: 0.68rem;
-    padding: 1px 7px;
-    border-radius: 10px;
+    padding: 1px 8px;
+    border-radius: 999px;
     font-weight: 700;
     text-transform: none;
     letter-spacing: 0;
@@ -398,18 +435,19 @@
     background: var(--ta-bg);
     color: var(--ta-color);
     border: 1px solid var(--ta-border);
-    border-radius: 8px;
+    border-radius: 16px;
     padding: 14px;
     font-size: 0.88rem;
     line-height: 1.65;
     resize: vertical;
     font-family: 'Courier New', monospace;
-    transition: border-color 0.2s;
+    transition: border-color 0.2s, box-shadow 0.2s;
   }
 
   textarea:focus {
     outline: none;
     border-color: var(--ta-focus);
+    box-shadow: 0 0 0 3px var(--focus-ring);
   }
 
   #output {
@@ -421,7 +459,7 @@
     height: 420px;
     background: var(--out-bg);
     border: 1px solid var(--out-border);
-    border-radius: 8px;
+    border-radius: 16px;
     padding: 14px;
     font-size: 0.88rem;
     line-height: 1.65;
@@ -435,8 +473,8 @@
   #output-display .line-trans { color: var(--out-trans); }
   #output-display .line-sep   { color: var(--out-sep); user-select: none; }
   #output-display .line-err   { color: var(--out-err); font-style: italic; }
-  #output-display .line-long  { background: rgba(240,160,64,0.15); border-left: 3px solid #f0a040; padding-left: 6px; }
-  #output-display.has-long-lines { border-color: #f0a040; }
+  #output-display .line-long  { background: rgba(194,138,58,0.12); border-left: 3px solid var(--warn); padding-left: 6px; }
+  #output-display.has-long-lines { border-color: var(--warn); }
   #output-display .line-empty { min-height: 1.65em; display: block; }
 
   .output-legend {
@@ -459,6 +497,29 @@
     flex-shrink: 0;
   }
 
+  /* ── Icons ── */
+  .icon {
+    width: 1em;
+    height: 1em;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    vertical-align: -0.15em;
+    flex-shrink: 0;
+  }
+
+  .header-circle-btn .icon, .theme-toggle .icon { width: 15px; height: 15px; }
+  .panel-label .icon { width: 14px; height: 14px; }
+  .panel-mini-btn .icon, #autoTranslateBtn .icon, #importBtn .icon, #aiCleanupBtn .icon { width: 11px; height: 11px; }
+  .btn-row .icon { width: 13px; height: 13px; }
+  .err-row-icon .icon { width: 15px; height: 15px; color: var(--warn); }
+  .err-detail-header .icon { width: 14px; height: 14px; }
+  .overlay-icon { color: var(--overlay-strong); opacity: 0.55; }
+  .overlay-icon .icon { width: 30px; height: 30px; stroke-width: 1.8; }
+  #aiDialogCancel .icon, #aiDialogConfirm .icon { display: none; }
+
   /* ── Buttons ── */
   .btn-row {
     display: flex;
@@ -470,7 +531,7 @@
   button {
     padding: 9px 24px;
     border: none;
-    border-radius: 6px;
+    border-radius: 12px;
     font-size: 0.9rem;
     font-weight: 600;
     cursor: pointer;
@@ -492,7 +553,7 @@
     line-height: 1;
   }
   .ws-toggle:hover { opacity: 0.7; }
-  .ws-toggle.active { opacity: 1; color: #5cb85c; }
+  .ws-toggle.active { opacity: 1; color: var(--ok); }
   textarea.ws-visible { color: var(--out-song); }
 
   #debugBtn {
@@ -516,7 +577,7 @@
     bottom: 0;
     left: 0;
     height: 3px;
-    background: #5cb85c;
+    background: var(--ok);
     animation: debug-fill 1.5s linear forwards;
   }
   @keyframes debug-fill {
@@ -532,16 +593,16 @@
     color: var(--status-color);
     margin-top: 6px;
   }
-  .status.ok  { color: #5cb85c; }
-  .status.err { color: #e74c3c; }
-  .status.warn { color: #f0ad4e; }
+  .status.ok  { color: var(--ok); }
+  .status.err { color: var(--err); }
+  .status.warn { color: var(--warn); }
 
   /* ── Hinweis-Box (fehlende Zeilen) ── */
   #error-detail {
     display: none;
     margin-top: 14px;
     border: 1px solid var(--err-box-border);
-    border-radius: 8px;
+    border-radius: 14px;
     background: var(--err-box-bg);
     overflow: hidden;
   }
@@ -568,7 +629,7 @@
     gap: 10px;
     background: var(--err-row-bg);
     border: 1px solid var(--err-row-border);
-    border-radius: 6px;
+    border-radius: 10px;
     padding: 8px 12px;
     font-size: 0.8rem;
     line-height: 1.5;
@@ -577,8 +638,8 @@
   .err-row-icon { font-size: 1rem; flex-shrink: 0; margin-top: 1px; }
   .err-row-content { flex: 1; }
   .err-row-section { color: var(--out-label); font-weight: 700; margin-bottom: 2px; }
-  .err-row-missing-song  { color: #f0ad4e; }
-  .err-row-missing-trans { color: #f0ad4e; }
+  .err-row-missing-song  { color: var(--warn); }
+  .err-row-missing-trans { color: var(--warn); }
   .err-row-hint { margin-top: 3px; color: var(--err-hint); font-size: 0.75rem; }
 
   /* ── Clear button ── */
@@ -609,15 +670,15 @@
 
   /* ── Sync resync needed ── */
   #autoTranslateBtn.needs-resync {
-    background: #4a2000;
-    color: #f0a040;
-    border-color: #f0a040;
+    background: rgba(194,138,58,0.15);
+    color: var(--warn);
+    border-color: var(--warn);
     animation: resync-pulse 1.5s ease-in-out infinite;
   }
   .light #autoTranslateBtn.needs-resync {
-    background: #fff3e0;
-    color: #e07000;
-    border-color: #e07000;
+    background: #FAF4E8;
+    color: #C28A3A;
+    border-color: #C28A3A;
   }
   @keyframes resync-pulse {
     0%, 100% { opacity: 1; }
@@ -625,18 +686,18 @@
   }
 
   #translation.needs-resync {
-    border-color: #f0a040 !important;
+    border-color: var(--warn) !important;
   }
   #translation.sync-locked {
     opacity: 0.55;
     cursor: default;
     border-style: dashed;
-    border-color: #2a7a2a88;
+    border-color: var(--ok);
   }
   #translation.sync-locked::placeholder { opacity: 0; }
   .sync-line-info {
     font-size: 0.75rem;
-    color: #f0a040;
+    color: var(--warn);
     margin-top: 4px;
     padding-left: 2px;
   }
@@ -670,8 +731,8 @@
     border-radius: 50%;
     transition: transform 0.2s, background 0.2s;
   }
-  .sync-toggle input:checked + .sync-slider { background: #2a7a2a; }
-  .sync-toggle input:checked + .sync-slider::after { transform: translateX(14px); background: #5cb85c; }
+  .sync-toggle input:checked + .sync-slider { background: var(--ok); }
+  .sync-toggle input:checked + .sync-slider::after { transform: translateX(14px); background: #fff; }
   .sync-label {
     font-size: 0.65rem;
     color: var(--btn-color);
@@ -680,7 +741,7 @@
     letter-spacing: 0;
     transition: color 0.2s;
   }
-  .sync-toggle input:checked ~ .sync-label { color: #5cb85c; }
+  .sync-toggle input:checked ~ .sync-label { color: var(--ok); }
 
   /* ── AI warning dialog ── */
   .ai-dialog-overlay {
@@ -697,23 +758,24 @@
   .ai-dialog {
     background: var(--dialog-bg);
     border: 1px solid var(--translate-border);
-    border-radius: 10px;
+    border-radius: 22px;
     max-width: 440px;
     width: 90%;
     overflow: hidden;
-    box-shadow: 0 8px 32px rgba(0,0,0,0.6);
+    box-shadow: var(--shadow-floating);
   }
 
   .ai-dialog-header {
     background: var(--dialog-header-bg);
-    padding: 12px 18px;
+    padding: 14px 18px;
     font-size: 0.88rem;
-    font-weight: 700;
+    font-weight: 600;
     color: var(--dialog-header-color);
     display: flex;
     align-items: center;
     gap: 8px;
   }
+  .ai-dialog-header .icon { width: 15px; height: 15px; stroke-width: 2; }
 
   .ai-dialog-body {
     padding: 16px 18px;
@@ -808,15 +870,15 @@
   }
   #splitBtn:hover { background: var(--btn-hover-bg); color: var(--btn-hover-color); border-color: var(--btn-hover-color); }
   #splitBtn.highlight {
-    background: #1a4a2a;
-    color: #5cb85c;
-    border-color: #5cb85c;
+    background: rgba(95,141,106,0.18);
+    color: var(--ok);
+    border-color: var(--ok);
     animation: split-glow 1s ease-in-out 3;
   }
   .light #splitBtn.highlight {
-    background: #e8f5e8;
-    color: #2a7a2a;
-    border-color: #2a7a2a;
+    background: #E5EDE8;
+    color: #527B60;
+    border-color: #527B60;
   }
   @keyframes split-glow {
     0%, 100% { opacity: 1; }
@@ -839,7 +901,7 @@
     letter-spacing: 0;
   }
   .panel-mini-btn:hover { color: var(--btn-hover-color); border-color: var(--btn-color); transform: none; }
-  .panel-mini-btn.copied { color: #5cb85c; border-color: #3a5a3a; }
+  .panel-mini-btn.copied { color: var(--ok); border-color: var(--ok); }
 
   .slide-count {
     font-size: 0.68rem;
@@ -915,7 +977,7 @@
     gap: 8px;
     pointer-events: none;
     border: 2px dashed var(--overlay-border);
-    border-radius: 8px;
+    border-radius: 16px;
     transition: opacity 0.2s;
   }
   .textarea-overlay.hidden { opacity: 0; }
@@ -952,8 +1014,8 @@
     position: absolute;
     inset: 0;
     z-index: 10;
-    background: rgba(0,0,0,0.7);
-    border-radius: 8px;
+    background: rgba(17,20,18,0.72);
+    border-radius: 16px;
     flex-direction: column;
     align-items: center;
     justify-content: center;
@@ -963,7 +1025,7 @@
   .processing-spinner {
     width: 36px;
     height: 36px;
-    border: 3px solid rgba(168,216,234,0.2);
+    border: 3px solid rgba(124,172,190,0.2);
     border-top-color: var(--ta-focus);
     border-radius: 50%;
     animation: spin 0.8s linear infinite;
@@ -979,6 +1041,15 @@
     color: rgba(255,255,255,0.5);
     font-size: 0.75rem;
     text-align: center;
+  }
+
+  /* ── Reduced Motion (Accessibility) ── */
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+    }
   }
 
   /* ── Print ── */
@@ -1010,15 +1081,39 @@
 </script>
 <body>
 
+<!-- ── Lucide Icon Sprite ─────────────────────────────────────── -->
+<svg xmlns="http://www.w3.org/2000/svg" style="display:none" aria-hidden="true">
+  <symbol id="i-music" viewBox="0 0 24 24"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></symbol>
+  <symbol id="i-undo" viewBox="0 0 24 24"><path d="M3 7v6h6"/><path d="M21 17a9 9 0 0 0-9-9 9 9 0 0 0-6 2.3L3 13"/></symbol>
+  <symbol id="i-redo" viewBox="0 0 24 24"><path d="M21 7v6h-6"/><path d="M3 17a9 9 0 0 1 9-9 9 9 0 0 1 6 2.3l3 2.7"/></symbol>
+  <symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></symbol>
+  <symbol id="i-moon" viewBox="0 0 24 24"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></symbol>
+  <symbol id="i-file-up" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M12 12v6"/><path d="m9 15 3-3 3 3"/></symbol>
+  <symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></symbol>
+  <symbol id="i-split" viewBox="0 0 24 24"><path d="m16 3 4 4-4 4"/><path d="M20 7H4"/><path d="m8 21-4-4 4-4"/><path d="M4 17h16"/></symbol>
+  <symbol id="i-sparkles" viewBox="0 0 24 24"><path d="m12 3-1.9 5.8a2 2 0 0 1-1.3 1.3L3 12l5.8 1.9a2 2 0 0 1 1.3 1.3L12 21l1.9-5.8a2 2 0 0 1 1.3-1.3L21 12l-5.8-1.9a2 2 0 0 1-1.3-1.3z"/></symbol>
+  <symbol id="i-globe" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/><path d="M2 12h20"/></symbol>
+  <symbol id="i-refresh" viewBox="0 0 24 24"><path d="M3 12a9 9 0 0 1 15.3-6.4L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-15.3 6.4L3 16"/><path d="M3 21v-5h5"/></symbol>
+  <symbol id="i-file-text" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M16 13H8"/><path d="M16 17H8"/><path d="M10 9H8"/></symbol>
+  <symbol id="i-save" viewBox="0 0 24 24"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><path d="M17 21v-8H7v8"/><path d="M7 3v5h8"/></symbol>
+  <symbol id="i-rotate-ccw" viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></symbol>
+  <symbol id="i-bug" viewBox="0 0 24 24"><path d="m8 2 1.88 1.88"/><path d="M14.12 3.88 16 2"/><path d="M9 7.13v-1a3.003 3.003 0 1 1 6 0v1"/><path d="M12 20c-3.3 0-6-2.7-6-6v-3a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v3c0 3.3-2.7 6-6 6"/><path d="M12 20v-9"/><path d="M6.53 9C4.6 8.8 3 7.1 3 5"/><path d="M6 13H2"/><path d="M3 21c0-2.1 1.7-3.9 3.8-4"/><path d="M20.97 5c0 2.1-1.6 3.8-3.53 4"/><path d="M22 13h-4"/><path d="M17.2 17c2.1.1 3.8 1.9 3.8 4"/></symbol>
+  <symbol id="i-copy" viewBox="0 0 24 24"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></symbol>
+  <symbol id="i-check" viewBox="0 0 24 24"><path d="M21.801 10A10 10 0 1 1 17 3.335"/><path d="m9 11 3 3L22 4"/></symbol>
+  <symbol id="i-alert" viewBox="0 0 24 24"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><path d="M12 9v4"/><path d="M12 17h.01"/></symbol>
+  <symbol id="i-info" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></symbol>
+  <symbol id="i-x" viewBox="0 0 24 24"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></symbol>
+</svg>
+
 <!-- ── Header ─────────────────────────────────────────────────── -->
 <div class="header">
   <div class="header-top">
-    <span class="header-icon">🎵</span>
+    <span class="header-icon"><svg class="icon"><use href="#i-music"/></svg></span>
     <span class="header-title">Beamer Formatierer</span>
     <span style="flex:1"></span>
-    <button id="undoBtn" class="header-circle-btn" disabled title="Rückgängig (Ctrl+Z)">↩</button>
-    <button id="redoBtn" class="header-circle-btn" disabled title="Wiederherstellen (Ctrl+Y)">↪</button>
-    <button id="themeToggle" class="theme-toggle" title="Helles/Dunkles Design">🌙</button>
+    <button id="undoBtn" class="header-circle-btn" disabled title="Rückgängig (Ctrl+Z)" aria-label="Rückgängig"><svg class="icon"><use href="#i-undo"/></svg></button>
+    <button id="redoBtn" class="header-circle-btn" disabled title="Wiederherstellen (Ctrl+Y)" aria-label="Wiederherstellen"><svg class="icon"><use href="#i-redo"/></svg></button>
+    <button id="themeToggle" class="theme-toggle" title="Helles/Dunkles Design" aria-label="Design wechseln"><svg class="icon"><use href="#i-moon"/></svg></button>
   </div>
 
   <div style="display:flex;gap:20px">
@@ -1061,61 +1156,61 @@
   <div class="instructions" id="features">
 
     <div class="instr-item">
-      <div class="instr-num">📂</div>
+      <div class="instr-num"><svg class="icon"><use href="#i-file-up"/></svg></div>
       <div><strong>Datei öffnen</strong><br>
         Word, PDF, Bilder, Audio oder TXT — einfach Datei öffnen oder auf das Feld ziehen. Akkorde und Nummern verschwinden automatisch.</div>
     </div>
 
     <div class="instr-item">
-      <div class="instr-num">🔍</div>
+      <div class="instr-num"><svg class="icon"><use href="#i-search"/></svg></div>
       <div><strong>Bilder &amp; Audio</strong><br>
         Fotos von Liedblättern werden gelesen. Audioaufnahmen werden als Text erkannt. Bitte das Ergebnis immer prüfen!</div>
     </div>
 
     <div class="instr-item">
-      <div class="instr-num">⇅</div>
+      <div class="instr-num"><svg class="icon"><use href="#i-split"/></svg></div>
       <div><strong>Zeilen aufteilen</strong><br>
         Wenn Deutsch und Russisch gemischt im Text stehen, erscheint dieser Button. Er trennt die Sprachen automatisch.</div>
     </div>
 
     <div class="instr-item">
-      <div class="instr-num">✨</div>
+      <div class="instr-num"><svg class="icon"><use href="#i-sparkles"/></svg></div>
       <div><strong>KI-Formatierung</strong><br>
         Falls der Text nach dem Import durcheinander ist: Dieser Button lässt die KI den Text neu ordnen und sauber aufteilen.</div>
     </div>
 
     <div class="instr-item">
-      <div class="instr-num">🌐</div>
+      <div class="instr-num"><svg class="icon"><use href="#i-globe"/></svg></div>
       <div><strong>KI-Übersetzung</strong><br>
         Übersetzt den Liedtext automatisch (Deutsch ↔ Russisch). Bitte das Ergebnis Zeile für Zeile prüfen!</div>
     </div>
 
     <div class="instr-item">
-      <div class="instr-num">🔄</div>
+      <div class="instr-num"><svg class="icon"><use href="#i-refresh"/></svg></div>
       <div><strong>Sync</strong><br>
         Wenn aktiv, werden Absatz-Änderungen im Liedtext automatisch auch in der Übersetzung gemacht. Schaltet sich bei Bedarf von selbst ein.</div>
     </div>
 
     <div class="instr-item">
-      <div class="instr-num">📄</div>
+      <div class="instr-num"><svg class="icon"><use href="#i-file-text"/></svg></div>
       <div><strong>Folien-Ausgabe</strong><br>
         Die Ausgabe rechts erscheint automatisch. Pro Folie stehen maximal 3 Zeilenpaare. Strophe/Refrain werden automatisch beschriftet.</div>
     </div>
 
     <div class="instr-item">
-      <div class="instr-num">💾</div>
+      <div class="instr-num"><svg class="icon"><use href="#i-save"/></svg></div>
       <div><strong>Speichern &amp; Kopieren</strong><br>
         Ausgabe kopieren oder als .txt speichern. <code>--</code> im Liedtext erzwingt einen Folientrenner, <code>|: :|</code> markiert Wiederholungen.</div>
     </div>
 
     <div class="instr-item">
-      <div class="instr-num">↩</div>
+      <div class="instr-num"><svg class="icon"><use href="#i-rotate-ccw"/></svg></div>
       <div><strong>Rückgängig</strong><br>
         Jede Änderung lässt sich rückgängig machen — mit den Buttons oben rechts oder Strg+Z / Strg+Y.</div>
     </div>
 
     <div class="instr-item">
-      <div class="instr-num">🐛</div>
+      <div class="instr-num"><svg class="icon"><use href="#i-bug"/></svg></div>
       <div><strong>Fehlerbericht</strong><br>
         Bei Problemen: Button kurz drücken = kopieren, lang drücken = als Datei speichern. Enthält alle Infos für den Support.</div>
     </div>
@@ -1126,25 +1221,25 @@
 <!-- ── Editor ──────────────────────────────────────────────────── -->
 <div class="main">
   <div class="mobile-tabs" id="mobileTabs">
-    <button class="mobile-tab active" data-panel="0">🎼 Liedtext</button>
-    <button class="mobile-tab" data-panel="1">🌐 Übersetzung</button>
-    <button class="mobile-tab" data-panel="2">✅ Ausgabe</button>
+    <button class="mobile-tab active" data-panel="0"><svg class="icon"><use href="#i-music"/></svg> Liedtext</button>
+    <button class="mobile-tab" data-panel="1"><svg class="icon"><use href="#i-globe"/></svg> Übersetzung</button>
+    <button class="mobile-tab" data-panel="2"><svg class="icon"><use href="#i-check"/></svg> Ausgabe</button>
   </div>
   <div class="editor-grid">
 
     <div class="panel">
       <div class="panel-label">
-        🎼 Liedtext (Original)
+        <svg class="icon"><use href="#i-music"/></svg> Liedtext (Original)
         <span class="lang-badge" id="badge1"></span>
-        <button id="aiCleanupBtn">✨ KI-Formatierung</button>
-        <button id="importBtn">📂 Datei öffnen</button>
+        <button id="aiCleanupBtn"><svg class="icon"><use href="#i-sparkles"/></svg> KI-Formatierung</button>
+        <button id="importBtn"><svg class="icon"><use href="#i-file-up"/></svg> Datei öffnen</button>
         <input type="file" id="importFile" accept=".txt,.docx,.pdf,.png,.jpg,.jpeg,.webp,.bmp,.gif,.tiff,.tif,.mp3,.wav,.ogg,.aac,.flac,.aiff,.m4a,.wma" style="display:none">
       </div>
       <div class="textarea-wrap">
         <textarea id="song" placeholder=" "></textarea>
         <span id="wsToggle" class="ws-toggle" title="Formatierungszeichen ein/ausblenden">¶</span>
         <div class="textarea-overlay" id="songOverlay">
-          <div class="overlay-icon">📄</div>
+          <div class="overlay-icon"><svg class="icon"><use href="#i-file-text"/></svg></div>
           <div class="overlay-text">Text einfügen, eintippen<br>oder <strong>Datei hierher ziehen</strong></div>
           <div class="overlay-hint">TXT · Word · PDF · Bild · Audio</div>
           <pre class="overlay-example">Strophe 1
@@ -1169,19 +1264,19 @@ Zeile 2</pre>
 
     <div class="panel">
       <div class="panel-label">
-        🌐 Übersetzung
+        <svg class="icon"><use href="#i-globe"/></svg> Übersetzung
         <span class="lang-badge" id="badge2"></span>
         <label class="sync-toggle" title="Struktur automatisch vom Liedtext übernehmen">
           <input type="checkbox" id="syncToggle">
           <span class="sync-slider"></span>
           <span class="sync-label">Sync</span>
         </label>
-        <button id="autoTranslateBtn">✨ KI-Übersetzung</button>
+        <button id="autoTranslateBtn"><svg class="icon"><use href="#i-sparkles"/></svg> KI-Übersetzung</button>
       </div>
       <div class="textarea-wrap">
         <textarea id="translation" placeholder=" "></textarea>
         <div class="textarea-overlay" id="translationOverlay">
-          <div class="overlay-icon">🌐</div>
+          <div class="overlay-icon"><svg class="icon"><use href="#i-globe"/></svg></div>
           <div class="overlay-text">Übersetzung einfügen<br>oder <strong>Datei hierher ziehen</strong></div>
           <div class="overlay-hint">oder KI-Übersetzung nutzen</div>
           <pre class="overlay-example">Strophe 1
@@ -1206,31 +1301,31 @@ Zeile 2 übersetzt</pre>
     </div>
 
     <div class="panel">
-      <div class="panel-label">✅ Ausgabe &mdash; Formatiert <span id="slide-count" class="slide-count"></span>
+      <div class="panel-label"><svg class="icon"><use href="#i-check"/></svg> Ausgabe &mdash; Formatiert <span id="slide-count" class="slide-count"></span>
         <span style="flex:1"></span>
-        <button id="copyBtn" class="panel-mini-btn">⎘ Kopieren</button>
-        <button id="exportBtn" class="panel-mini-btn">💾 .txt</button>
+        <button id="copyBtn" class="panel-mini-btn"><svg class="icon"><use href="#i-copy"/></svg> Kopieren</button>
+        <button id="exportBtn" class="panel-mini-btn"><svg class="icon"><use href="#i-save"/></svg> .txt</button>
       </div>
       <div id="output-display"></div>
       <textarea id="output" readonly></textarea>
       <div class="output-legend">
-        <div class="legend-item"><div class="legend-dot" style="background:#7ec8e3"></div> Liedtext</div>
-        <div class="legend-item"><div class="legend-dot" style="background:#b8e6a0"></div> Übersetzung</div>
-        <div class="legend-item"><div class="legend-dot" style="background:#f0c060"></div> Abschnittsname</div>
-        <div class="legend-item"><div class="legend-dot" style="background:#e37e7e"></div> Fehler</div>
+        <div class="legend-item"><div class="legend-dot" style="background:var(--out-song)"></div> Liedtext</div>
+        <div class="legend-item"><div class="legend-dot" style="background:var(--out-trans)"></div> Übersetzung</div>
+        <div class="legend-item"><div class="legend-dot" style="background:var(--out-label)"></div> Abschnittsname</div>
+        <div class="legend-item"><div class="legend-dot" style="background:var(--out-err)"></div> Fehler</div>
       </div>
     </div>
 
   </div>
 
   <div class="btn-row">
-    <button id="splitBtn" style="display:none">⇅ Zeilen aufteilen</button>
-    <button id="clearBtn">✕ Leeren</button>
-    <button id="debugBtn">🐛 Copy Debug</button>
+    <button id="splitBtn" style="display:none"><svg class="icon"><use href="#i-split"/></svg> Zeilen aufteilen</button>
+    <button id="clearBtn"><svg class="icon"><use href="#i-x"/></svg> Leeren</button>
+    <button id="debugBtn"><svg class="icon"><use href="#i-bug"/></svg> Copy Debug</button>
   </div>
   <div class="status" id="status"></div>
   <div id="error-detail">
-    <div class="err-detail-header">ℹ Zeilen-Abgleich — Hinweise</div>
+    <div class="err-detail-header"><svg class="icon"><use href="#i-info"/></svg> Zeilen-Abgleich — Hinweise</div>
     <div class="err-detail-body" id="error-detail-body"></div>
   </div>
 </div>
@@ -1238,7 +1333,7 @@ Zeile 2 übersetzt</pre>
 <!-- ── KI-Übersetzung Warn-Dialog ───────────────────────────── -->
 <div class="ai-dialog-overlay" id="aiDialogOverlay">
   <div class="ai-dialog">
-    <div class="ai-dialog-header">✨ Hinweis zur KI-Übersetzung</div>
+    <div class="ai-dialog-header"><svg class="icon"><use href="#i-sparkles"/></svg> Hinweis zur KI-Übersetzung</div>
     <div class="ai-dialog-body">
       <strong>KI-Übersetzungen müssen sorgfältig geprüft werden!</strong>
       <ul>
@@ -1257,7 +1352,7 @@ Zeile 2 übersetzt</pre>
 <!-- ── OCR/Audio Warn-Dialog ─────────────────────────────── -->
 <div class="ai-dialog-overlay" id="ocrDialogOverlay">
   <div class="ai-dialog">
-    <div class="ai-dialog-header" id="ocrDialogHeader">⚠️ Hinweis zur Texterkennung</div>
+    <div class="ai-dialog-header" id="ocrDialogHeader"><svg class="icon"><use href="#i-alert"/></svg> <span>Hinweis zur Texterkennung</span></div>
     <div class="ai-dialog-body" id="ocrDialogBody"></div>
     <div class="ai-dialog-footer">
       <button id="ocrDialogConfirm">Verstanden</button>
@@ -1266,23 +1361,29 @@ Zeile 2 übersetzt</pre>
 </div>
 
 <script>
+// ─── Icon-Helper (Lucide SVG) ────────────────────────────────────────────────
+window.iconSvg = function(id) {
+  return '<svg class="icon" aria-hidden="true"><use href="#' + id + '"/></svg>';
+};
+
 // ─── Theme ────────────────────────────────────────────────────────────────────
 (function() {
   // Klasse wird bereits im <head> auf <html> gesetzt, hier auf <body> synchronisieren
   const saved = localStorage.getItem('theme');
   if (saved === 'light') document.body.classList.add('light');
+  else if (!saved && window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches) document.body.classList.add('light');
 })();
 
 document.getElementById('themeToggle').addEventListener('click', () => {
   const isLight = document.body.classList.toggle('light');
   document.documentElement.classList.toggle('light', isLight);
-  document.getElementById('themeToggle').textContent = isLight ? '☀️' : '🌙';
+  document.getElementById('themeToggle').innerHTML = isLight ? iconSvg('i-sun') : iconSvg('i-moon');
   localStorage.setItem('theme', isLight ? 'light' : 'dark');
   logAction('Theme', isLight ? 'Hell' : 'Dunkel');
   console.log('[Theme]', isLight ? 'Hell' : 'Dunkel');
 });
 // Icon initial setzen
-if (document.documentElement.classList.contains('light')) document.getElementById('themeToggle').textContent = '☀️';
+if (document.documentElement.classList.contains('light')) document.getElementById('themeToggle').innerHTML = iconSvg('i-sun');
 
 // ─── Mobile Tabs ──────────────────────────────────────────────────────────────
 (function() {
@@ -1475,10 +1576,10 @@ function checkRateLimit(apiName) {
 
 // ─── API Retry Wrapper ────────────────────────────────────────────────────────
 
-async function fetchWithRetry(url, options = {}, maxRetries = 2) {
+async function fetchWithRetry(url, options = {}, maxRetries = 2, timeoutMs = 30000) {
   for (let attempt = 0; attempt <= maxRetries; attempt++) {
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 30000);
+    const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
     try {
       const response = await fetch(url, { ...options, signal: controller.signal });
       clearTimeout(timeoutId);
@@ -1562,7 +1663,8 @@ function detectLanguage(lines) {
 // ─── Parsing ─────────────────────────────────────────────────────────────────
 
 function parseInput(raw) {
-  const rawLines = raw.split('\n');
+  // " | " = Gap-Marker aus dem PDF-Import (Textblock-Grenze) → im Non-AI-Pfad als Zeilenumbruch behandeln
+  const rawLines = raw.split('\n').flatMap(l => l.split(' | '));
   const sections = [];
   let current = null;
   let inRepeat = false;
@@ -1844,17 +1946,17 @@ function validateOutput(lines) {
 
   // Check 1: Fehler-Zeilen
   const errCount = lines.filter(l => l.type === 'err').length;
-  if (errCount) warnings.push({ icon: '⚠️', msg: `${errCount} fehlende Zeile${errCount > 1 ? 'n' : ''} in der Ausgabe` });
+  if (errCount) warnings.push({ icon: iconSvg('i-alert'), msg: `${errCount} fehlende Zeile${errCount > 1 ? 'n' : ''} in der Ausgabe` });
 
   // Check 2-5: Strophen-Analyse
   for (const s of strophes) {
-    if (s.pairCount === 0) warnings.push({ icon: '⚠️', msg: `${s.label}: Leere Strophe` });
-    else if (s.pairCount === 1) warnings.push({ icon: '⚠️', msg: `${s.label}: Nur 1 Zeilenpaar — Fehler?` });
+    if (s.pairCount === 0) warnings.push({ icon: iconSvg('i-alert'), msg: `${s.label}: Leere Strophe` });
+    else if (s.pairCount === 1) warnings.push({ icon: iconSvg('i-alert'), msg: `${s.label}: Nur 1 Zeilenpaar — Fehler?` });
 
     // Check 8: Folie hat > 3 Zeilenpaare
-    if (s.slideMax > 3) warnings.push({ icon: '⚠️', msg: `${s.label}: Eine Folie hat ${s.slideMax} Paare (max. 3 empfohlen)` });
+    if (s.slideMax > 3) warnings.push({ icon: iconSvg('i-alert'), msg: `${s.label}: Eine Folie hat ${s.slideMax} Paare (max. 3 empfohlen)` });
   }
-  if (strophes.length > 15) warnings.push({ icon: '⚠️', msg: `Ungewöhnlich viele Strophen (${strophes.length}) — Formatierung prüfen` });
+  if (strophes.length > 15) warnings.push({ icon: iconSvg('i-alert'), msg: `Ungewöhnlich viele Strophen (${strophes.length}) — Formatierung prüfen` });
 
   // Check 6: DE/RU Zeilen vertauscht
   if (strophes.length >= 2) {
@@ -1862,14 +1964,14 @@ function validateOutput(lines) {
     const dominant = firstLangs.filter(l => l === firstLangs[0]).length;
     if (dominant < firstLangs.length) {
       const swapped = strophes.filter(s => s.songLines.length > 0 && (isRussian(s.songLines[0]) ? 'ru' : 'de') !== firstLangs[0]);
-      swapped.forEach(s => warnings.push({ icon: '⚠️', msg: `${s.label}: Sprachen könnten vertauscht sein (erste Zeile ist ${isRussian(s.songLines[0]) ? 'RU' : 'DE'} statt ${firstLangs[0].toUpperCase()})` }));
+      swapped.forEach(s => warnings.push({ icon: iconSvg('i-alert'), msg: `${s.label}: Sprachen könnten vertauscht sein (erste Zeile ist ${isRussian(s.songLines[0]) ? 'RU' : 'DE'} statt ${firstLangs[0].toUpperCase()})` }));
     }
   }
 
   // Check 7: Ungleiche Zeilenanzahl Song vs Translation pro Strophe
   for (const s of strophes) {
     if (s.songLines.length > 0 && s.transLines.length > 0 && s.songLines.length !== s.transLines.length) {
-      warnings.push({ icon: 'ℹ️', msg: `${s.label}: ${s.songLines.length} Liedtext-Zeilen vs ${s.transLines.length} Übersetzungs-Zeilen` });
+      warnings.push({ icon: iconSvg('i-info'), msg: `${s.label}: ${s.songLines.length} Liedtext-Zeilen vs ${s.transLines.length} Übersetzungs-Zeilen` });
     }
   }
 
@@ -1877,7 +1979,7 @@ function validateOutput(lines) {
   const refrainStrophes = strophes.filter(s => s.label.startsWith('Refrain'));
   const nonRefrainStrophes = strophes.filter(s => !s.label.startsWith('Refrain'));
   if (refrainStrophes.length === 1 && nonRefrainStrophes.length >= 3) {
-    warnings.push({ icon: 'ℹ️', msg: `Refrain kommt nur 1x vor bei ${nonRefrainStrophes.length} Strophen — wird er nach jeder Strophe wiederholt?` });
+    warnings.push({ icon: iconSvg('i-info'), msg: `Refrain kommt nur 1x vor bei ${nonRefrainStrophes.length} Strophen — wird er nach jeder Strophe wiederholt?` });
   }
 
   // Check 10: Identische aufeinanderfolgende Strophen
@@ -1885,7 +1987,7 @@ function validateOutput(lines) {
     const prev = strophes[i - 1].songLines.join('\n');
     const curr = strophes[i].songLines.join('\n');
     if (prev && curr && prev === curr) {
-      warnings.push({ icon: '⚠️', msg: `${strophes[i - 1].label} und ${strophes[i].label} sind identisch — Duplikat?` });
+      warnings.push({ icon: iconSvg('i-alert'), msg: `${strophes[i - 1].label} und ${strophes[i].label} sind identisch — Duplikat?` });
     }
   }
 
@@ -1893,7 +1995,7 @@ function validateOutput(lines) {
   if (refrainStrophes.length > 0 && strophes.length >= 3) {
     const last = strophes[strophes.length - 1];
     if (!last.label.includes('Refrain L')) {
-      warnings.push({ icon: 'ℹ️', msg: `Letzte Strophe ist "${last.label}" — erwartet "Refrain L" als Abschluss` });
+      warnings.push({ icon: iconSvg('i-info'), msg: `Letzte Strophe ist "${last.label}" — erwartet "Refrain L" als Abschluss` });
     }
   }
 
@@ -1941,17 +2043,17 @@ function buildErrorDetails(songRaw, transRaw) {
 
     if (songCount > transCount) {
       const n = songCount - transCount;
-      rows.push({ label, icon: '📄', missingIn: 'Übersetzung', n });
+      rows.push({ label, icon: iconSvg('i-file-text'), missingIn: 'Übersetzung', n });
     } else if (transCount > songCount) {
       const n = transCount - songCount;
-      rows.push({ label, icon: '🌐', missingIn: 'Liedtext', n });
+      rows.push({ label, icon: iconSvg('i-globe'), missingIn: 'Liedtext', n });
     }
   });
 
   // Extra translation sections with no matching song section
   transSections.slice(songSections.length).forEach((s, i) => {
     const n = s.lines.filter(l => !isSeparator(l)).length;
-    if (n > 0) rows.push({ label: 'Übersetzungs-Abschnitt ' + (songSections.length + i + 1), icon: '🌐', missingIn: 'Liedtext', n });
+    if (n > 0) rows.push({ label: 'Übersetzungs-Abschnitt ' + (songSections.length + i + 1), icon: iconSvg('i-globe'), missingIn: 'Liedtext', n });
   });
 
   return rows;
@@ -2011,7 +2113,7 @@ function runFormat() {
   }
   if (!isBilingual) splitBtn.classList.remove('highlight');
   if (isBilingual) {
-    statusEl.textContent = '💡 Tipp: Klicke "⇅ Zeilen aufteilen" — der Text enthält abwechselnd zwei Sprachen';
+    statusEl.textContent = 'Tipp: Klicke "Zeilen aufteilen" — der Text enthält abwechselnd zwei Sprachen';
     statusEl.className = 'status warn';
   }
 
@@ -2241,15 +2343,15 @@ let syncedContentCount = null; // Gültige Content-Zeilenzahl nach Übersetzung
 function showResyncNeeded(songCount, transCount) {
   const btn = document.getElementById('autoTranslateBtn');
   btn.classList.add('needs-resync');
-  btn.textContent = '⚠ Neu übersetzen';
+  btn.innerHTML = iconSvg('i-alert') + ' Neu übersetzen';
   document.getElementById('translation').classList.add('needs-resync');
   // Inline-Hinweis unter der Übersetzung
   const info = document.getElementById('sync-line-info');
   const diff = songCount - transCount;
   if (diff > 0) {
-    info.textContent = `⚠ ${diff} Zeile${diff > 1 ? 'n' : ''} mehr im Liedtext als in der Übersetzung`;
+    info.textContent = `${diff} Zeile${diff > 1 ? 'n' : ''} mehr im Liedtext als in der Übersetzung`;
   } else {
-    info.textContent = `⚠ ${-diff} Zeile${-diff > 1 ? 'n' : ''} weniger im Liedtext als in der Übersetzung`;
+    info.textContent = `${-diff} Zeile${-diff > 1 ? 'n' : ''} weniger im Liedtext als in der Übersetzung`;
   }
   info.style.display = 'block';
 }
@@ -2257,7 +2359,7 @@ function showResyncNeeded(songCount, transCount) {
 function hideSyncWarning() {
   const btn = document.getElementById('autoTranslateBtn');
   btn.classList.remove('needs-resync');
-  btn.textContent = '✨ KI-Übersetzung';
+  btn.innerHTML = iconSvg('i-sparkles') + ' KI-Übersetzung';
   document.getElementById('translation').classList.remove('needs-resync');
   document.getElementById('sync-line-info').style.display = 'none';
 }
@@ -2402,9 +2504,9 @@ document.getElementById('copyBtn').addEventListener('click', () => {
   navigator.clipboard.writeText(outputEl.value).then(() => {
     console.log('[Copy] Erfolgreich in Zwischenablage kopiert');
     const btn = document.getElementById('copyBtn');
-    btn.textContent = '✓ Kopiert';
+    btn.innerHTML = iconSvg('i-check') + ' Kopiert';
     btn.classList.add('copied');
-    setTimeout(() => { btn.textContent = '⎘ Kopieren'; btn.classList.remove('copied'); }, 2000);
+    setTimeout(() => { btn.innerHTML = iconSvg('i-copy') + ' Kopieren'; btn.classList.remove('copied'); }, 2000);
   }).catch(err => {
     console.error('[Copy] Clipboard-Fehler:', err.message, '(Tipp: clipboard.writeText braucht HTTPS oder localhost)');
   });
@@ -2440,7 +2542,7 @@ function resetClearButton() {
     clearTimeout(clearTimer);
     clearInterval(clearCountdown);
     clearBackup = null;
-    document.getElementById('clearBtn').textContent = '✕ Leeren';
+    document.getElementById('clearBtn').innerHTML = iconSvg('i-x') + ' Leeren';
   }
 }
 
@@ -2457,7 +2559,7 @@ document.getElementById('clearBtn').addEventListener('click', () => {
     songEl.value = clearBackup.song;
     transEl.value = clearBackup.trans;
     clearBackup = null;
-    btn.textContent = '✕ Leeren';
+    btn.innerHTML = iconSvg('i-x') + ' Leeren';
     runFormat();
     return;
   }
@@ -2480,19 +2582,19 @@ document.getElementById('clearBtn').addEventListener('click', () => {
   runFormat();
 
   let remaining = 10;
-  btn.textContent = `↩ Rückgängig (${remaining}s)`;
+  btn.innerHTML = iconSvg('i-undo') + ` Rückgängig (${remaining}s)`;
 
   clearCountdown = setInterval(() => {
     remaining--;
     if (remaining > 0) {
-      btn.textContent = `↩ Rückgängig (${remaining}s)`;
+      btn.innerHTML = iconSvg('i-undo') + ` Rückgängig (${remaining}s)`;
     }
   }, 1000);
 
   clearTimer = setTimeout(() => {
     clearInterval(clearCountdown);
     clearBackup = null;
-    btn.textContent = '✕ Leeren';
+    btn.innerHTML = iconSvg('i-x') + ' Leeren';
   }, 10000);
 });
 
@@ -2518,9 +2620,9 @@ document.getElementById('clearBtn').addEventListener('click', () => {
       a.download = `debug-report-${SESSION_ID}.txt`;
       a.click();
       URL.revokeObjectURL(url);
-      btn.innerHTML = '✓ .txt gespeichert!';
+      btn.innerHTML = iconSvg('i-check') + ' .txt gespeichert!';
       btn.className = 'copied';
-      setTimeout(() => { btn.innerHTML = '🐛 Copy Debug'; btn.className = ''; }, 2000);
+      setTimeout(() => { btn.innerHTML = iconSvg('i-bug') + ' Copy Debug'; btn.className = ''; }, 2000);
     }, 1500);
   }
 
@@ -2545,9 +2647,9 @@ document.getElementById('clearBtn').addEventListener('click', () => {
     _origLog(`[Debug] Report Länge: ${report.length} Zeichen`);
     navigator.clipboard.writeText(report).then(() => {
       _origLog('[Debug] Erfolgreich kopiert');
-      btn.innerHTML = '✓ Kopiert!';
+      btn.innerHTML = iconSvg('i-check') + ' Kopiert!';
       btn.className = 'copied';
-      setTimeout(() => { btn.innerHTML = '🐛 Copy Debug'; btn.className = ''; }, 2000);
+      setTimeout(() => { btn.innerHTML = iconSvg('i-bug') + ' Copy Debug'; btn.className = ''; }, 2000);
     }).catch(err => {
       _origError('[Debug] Clipboard-Fehler:', err.message);
     });
@@ -2666,9 +2768,9 @@ async function runAutoTranslate() {
   const btn = document.getElementById('autoTranslateBtn');
   btn.classList.remove('needs-resync');
   document.getElementById('translation').classList.remove('needs-resync');
-  btn.textContent = '⏳ Übersetze…';
+  btn.innerHTML = iconSvg('i-sparkles') + ' Übersetze…';
   btn.disabled = true;
-  showTransProcessing('🌐 Übersetze…', 'Liedtext wird per KI übersetzt');
+  showTransProcessing('Übersetze…', 'Liedtext wird per KI übersetzt');
 
   try {
     const songContentLines = songRaw.split('\n').map(l => l.trim())
@@ -2791,7 +2893,7 @@ ${songRaw}`;
     statusEl.textContent = 'Übersetzungs-Fehler: ' + e.message;
     statusEl.className = 'status err';
   } finally {
-    btn.textContent = '✨ KI-Übersetzung';
+    btn.innerHTML = iconSvg('i-sparkles') + ' KI-Übersetzung';
     btn.disabled = false;
     hideTransProcessing();
     console.groupEnd();
@@ -2855,9 +2957,9 @@ async function extractTextFromFile(file) {
   const imageExts = ['png', 'jpg', 'jpeg', 'webp', 'bmp', 'gif', 'tiff', 'tif'];
   if (imageExts.includes(ext) || file.type.startsWith('image/')) {
     console.log('Bild erkannt, starte OCR via Vision API…');
-    statusEl.textContent = '🔍 OCR läuft…';
+    statusEl.textContent = 'OCR läuft…';
     statusEl.className = 'status';
-    showProcessing('🔍 Text wird erkannt…', 'Bild wird per OCR analysiert');
+    showProcessing('Text wird erkannt…', 'Bild wird per OCR analysiert');
     const startTime = performance.now();
     const buf = await file.arrayBuffer();
     const base64 = btoa(new Uint8Array(buf).reduce((s, b) => s + String.fromCharCode(b), ''));
@@ -2901,7 +3003,7 @@ async function extractTextFromPDF(file) {
   const totalPages = pdf.numPages;
   console.log('PDF geladen — Seiten:', totalPages);
 
-  statusEl.textContent = `📄 PDF wird gelesen (${totalPages} Seite${totalPages > 1 ? 'n' : ''})…`;
+  statusEl.textContent = `PDF wird gelesen (${totalPages} Seite${totalPages > 1 ? 'n' : ''})…`;
   statusEl.className = 'status';
 
   const MIN_DIGITAL_CHARS = 10;
@@ -2922,13 +3024,22 @@ async function extractTextFromPDF(file) {
       console.group(`  Seite ${p}/${totalPages}: DIGITAL (${rawText.length} Zeichen, ${lines.length} Zeilen)`);
       lines.forEach((line, i) => console.log(`    [${i}] "${line}"`));
       console.groupEnd();
-      statusEl.textContent = `📄 Seite ${p}/${totalPages} — digital extrahiert`;
+      statusEl.textContent = `Seite ${p}/${totalPages} — digital extrahiert`;
       allPageTexts.push(pageText);
+
+      // Erste digitale Seite als Bild für Gemini Cleanup speichern (Ground-Truth) —
+      // downgescaletes JPEG: das volle scale-2-PNG sprengt das 20MB-Inline-Limit der Gemini API
+      if (!lastImportedImageBase64) {
+        console.log(`    Rendere Seite 1 als Bild für Gemini Cleanup…`);
+        lastImportedImageBase64 = await renderPageToBase64(page, 1.2, 'image/jpeg');
+        lastImportedImageMime = 'image/jpeg';
+        console.log(`    Gemini-Bild (JPEG) gespeichert (~${(lastImportedImageBase64.length * 0.75 / 1024 / 1024).toFixed(2)} MB)`);
+      }
     } else {
       // Kein/kaum Text → OCR Fallback via Vision API
       console.group(`  Seite ${p}/${totalPages}: OCR nötig (nur ${rawText.length} digitale Zeichen)`);
-      statusEl.textContent = `🔍 Seite ${p}/${totalPages} — OCR läuft…`;
-      showProcessing(`🔍 Seite ${p} von ${totalPages}`, 'Text wird per OCR erkannt…');
+      statusEl.textContent = `Seite ${p}/${totalPages} — OCR läuft…`;
+      showProcessing(`Seite ${p} von ${totalPages}`, 'Text wird per OCR erkannt…');
 
       console.log(`    Rendere auf Canvas…`);
       const imageBase64 = await renderPageToBase64(page);
@@ -2938,11 +3049,13 @@ async function extractTextFromPDF(file) {
       const startTime = performance.now();
       const ocrText = await ocrWithVisionAPI(imageBase64);
 
-      // Erstes OCR-Bild für Gemini Cleanup speichern
+      // Erstes OCR-Bild für Gemini Cleanup speichern — eigenes downgescaletes JPEG, denn
+      // das volle scale-2-PNG sprengt das 20MB-Inline-Limit der Gemini API (Vision bekommt
+      // weiter die hochauflösende Version)
       if (!lastImportedImageBase64) {
-        lastImportedImageBase64 = imageBase64;
-        lastImportedImageMime = 'image/png';
-        console.log(`    Erstes OCR-Bild für Gemini gespeichert (~${(imageBase64.length * 0.75 / 1024 / 1024).toFixed(2)} MB)`);
+        lastImportedImageBase64 = await renderPageToBase64(page, 1.2, 'image/jpeg');
+        lastImportedImageMime = 'image/jpeg';
+        console.log(`    Gemini-Bild (downgescaletes JPEG) gespeichert (~${(lastImportedImageBase64.length * 0.75 / 1024 / 1024).toFixed(2)} MB)`);
       }
 
       const duration = ((performance.now() - startTime) / 1000).toFixed(1);
@@ -2964,31 +3077,115 @@ async function extractTextFromPDF(file) {
 }
 
 function groupTextItemsIntoLines(items) {
+  lastImportLineX0s = null;
   if (!items.length) { console.log('    [groupTextItemsIntoLines] Keine Items'); return []; }
   console.log(`    [groupTextItemsIntoLines] ${items.length} Text-Items, Y-Positionen: min=${Math.min(...items.map(i=>i.transform[5])).toFixed(0)} max=${Math.max(...items.map(i=>i.transform[5])).toFixed(0)}`);
 
+  // Musikglyphen/Notensymbole und reine Leerzeichen-Items entfernen — sie liegen zwischen
+  // den Text-Items und verfälschen die horizontalen Gap-Berechnungen
+  const textItems = items.filter(i => /[\p{L}\p{N}]/u.test(i.str));
+  if (!textItems.length) { console.log('    [groupTextItemsIntoLines] Keine Text-Items'); return []; }
+
   // Sort by vertical position (descending Y = top first in PDF coordinate space)
-  const sorted = items.slice().sort((a, b) => {
+  const sorted = textItems.slice().sort((a, b) => {
     const dy = b.transform[5] - a.transform[5]; // Y descending
     if (Math.abs(dy) > 3) return dy;
     return a.transform[4] - b.transform[4]; // X ascending if same line
   });
 
-  const lines = [];
-  let currentLine = [];
+  // Zeilen-Banding (Y-Toleranz 3pt)
+  const bands = [];
+  let currentBand = [];
   let lastY = sorted[0].transform[5];
-
   for (const item of sorted) {
     const y = item.transform[5];
     if (Math.abs(y - lastY) > 3) {
-      // New line
-      if (currentLine.length) lines.push(currentLine.map(i => i.str).join(''));
-      currentLine = [];
+      if (currentBand.length) bands.push(currentBand);
+      currentBand = [];
       lastY = y;
     }
-    currentLine.push(item);
+    currentBand.push(item);
   }
-  if (currentLine.length) lines.push(currentLine.map(i => i.str).join(''));
+  if (currentBand.length) bands.push(currentBand);
+
+  // Akkord-/Taktzahl-Zeilen entfernen (reine Kürzel-Zeilen über/unter den Notensystemen)
+  const isChordToken = s => /^[A-H][#♯b♭]?(m|maj|dim|aug|sus|add)?[0-9]*(sus[24]|add[0-9]+)?(\/[A-H][#♯b♭]?)?$/.test(s) || /^\d{1,3}[.:]?$/.test(s);
+  const textBands = bands.filter(band => {
+    const toks = band.map(i => i.str.trim()).filter(Boolean);
+    return toks.length > 0 && toks.some(t => !isChordToken(t));
+  });
+
+  // Isolierte Titel-/Kopfzeilen am Seitenanfang entfernen (Abstand zur nächsten Textzeile > 50pt)
+  while (textBands.length >= 2) {
+    const gapBelow = textBands[0][0].transform[5] - textBands[1][0].transform[5];
+    if (gapBelow > 50) textBands.shift(); else break;
+  }
+
+  // Zeile in Layout-Teile splitten (großer horizontaler Abstand = Textblock-Grenze).
+  // Liedblatt-Messung: Blockgrenze ~37pt, größter Melisma-Spalt innerhalb einer Zeile ~18pt.
+  // Zusätzlich Satzzeichen/Großbuchstabe als Guard, damit kein Split mitten im Wort landet.
+  const buildParts = (band) => {
+    const parts = [];
+    let cur = [band[0]];
+    for (let i = 1; i < band.length; i++) {
+      const prev = cur[cur.length - 1];
+      const gap = band[i].transform[4] - (prev.transform[4] + (prev.width || 0));
+      const prevEndsSentence = /[.!?:;]$/.test(prev.str.trim());
+      const nextStartsUpper = /^\p{Lu}/u.test(band[i].str);
+      if (gap > 25 && (prevEndsSentence || nextStartsUpper)) {
+        parts.push(cur);
+        cur = [];
+      }
+      cur.push(band[i]);
+    }
+    if (cur.length) parts.push(cur);
+    return parts.map(pi => ({
+      text: pi.map(i => i.str).join('').trim(),
+      x0: pi[0].transform[4],
+      x1: pi[pi.length - 1].transform[4] + (pi[pi.length - 1].width || 0)
+    })).filter(p => p.text);
+  };
+
+  const rowParts = textBands.map(buildParts);
+
+  // Hängende Zeilenenden rekonstruieren (Liedblatt-/Partitur-Layout): Liedzeilen laufen über
+  // mehrere Notensysteme; die Endung der Zeile steht am LINKEN Rand eines späteren Systems,
+  // während rechts daneben die nächste Textzeile beginnt. Der OCR-Lesefluss verschachtelt
+  // dadurch Strophen und Refrain. Rekonstruktion: k-tes hängendes Ende (linker Rand, endet
+  // mit Satzzeichen) ↔ k-te offene Hauptspalten-Zeile (kein Satzzeichen am Ende), beide in
+  // Lesereihenfolge. Nur anwenden, wenn das Muster eindeutig ist — sonst Fallback unten.
+  const minPartX0 = Math.min(...rowParts.flatMap(parts => parts.map(p => p.x0)));
+  const LEFT_TOLERANCE = 30;
+  const endings = [];
+  const wideLines = [];
+  for (const parts of rowParts) {
+    for (const part of parts) {
+      if (part.x0 <= minPartX0 + LEFT_TOLERANCE) endings.push(part);
+      else wideLines.push(part);
+    }
+  }
+  const openLines = wideLines.filter(w => !/[.!?:;]$/.test(w.text));
+  const canPair = endings.length >= 2
+    && openLines.length === endings.length
+    && wideLines.length >= endings.length
+    && endings.every(e => /[.!?:;]$/.test(e.text));
+  if (canPair) {
+    const endingByLine = new Map();
+    openLines.forEach((w, k) => endingByLine.set(w, endings[k]));
+    const lines = wideLines.map(w => {
+      const e = endingByLine.get(w);
+      // "‖" verbindet zwei Teile derselben logischen Zeile — das Modell entscheidet
+      // über Leerzeichen vs. Wortfortsetzung und entfernt den Marker.
+      return e ? w.text + ' ‖ ' + e.text : w.text;
+    });
+    console.log(`    [groupTextItemsIntoLines] Hängende Zeilenenden rekonstruiert: ${endings.length} Endungen auf ${openLines.length} offene Zeilen gepaart`);
+    lastImportLineX0s = wideLines.map(w => w.x0);
+    return lines;
+  }
+
+  // Fallback: Zeilen mit Layout-Blockgrenzen als " | "-Marker ausgeben
+  const lines = rowParts.map(parts => parts.map(p => p.text).join(' | '));
+  lastImportLineX0s = rowParts.map(parts => (parts.length ? parts[0].x0 : null));
 
   // Log leere oder verdächtig kurze Zeilen
   const suspicious = lines.filter((l, i) => l.trim().length === 0 || l.trim().length <= 2);
@@ -2999,8 +3196,7 @@ function groupTextItemsIntoLines(items) {
   return lines;
 }
 
-async function renderPageToBase64(page) {
-  const scale = 2; // Higher res = better OCR
+async function renderPageToBase64(page, scale = 2, mime = 'image/png', quality = 0.85) {
   const viewport = page.getViewport({ scale });
   const canvas = document.createElement('canvas');
   canvas.width = viewport.width;
@@ -3009,7 +3205,7 @@ async function renderPageToBase64(page) {
   const ctx = canvas.getContext('2d');
   await page.render({ canvasContext: ctx, viewport }).promise;
   // Return base64 without the data:image/... prefix
-  return canvas.toDataURL('image/png').replace(/^data:image\/png;base64,/, '');
+  return canvas.toDataURL(mime, quality).replace(/^data:image\/[a-z+]+;base64,/, '');
 }
 
 // ─── Audio-Transkription via Gemini ───────────────────────────────────────────
@@ -3027,9 +3223,9 @@ const AUDIO_TRANSCRIBE_PROMPT = `Transkribiere dieses Lied. Regeln:
 async function transcribeAudioWithGemini(file) {
   console.group('[Audio Transkription]');
 
-  statusEl.textContent = '🎵 Audio wird transkribiert…';
+  statusEl.textContent = 'Audio wird transkribiert…';
   statusEl.className = 'status';
-  showProcessing('🎵 Audio wird transkribiert…', 'Das kann einige Sekunden dauern');
+  showProcessing('Audio wird transkribiert…', 'Das kann einige Sekunden dauern');
 
   const buf = await file.arrayBuffer();
   const base64 = btoa(new Uint8Array(buf).reduce((s, b) => s + String.fromCharCode(b), ''));
@@ -3149,7 +3345,8 @@ function cleanOcrText(raw) {
   if (lines.length > 1) {
     const firstLine = lines[0].trim();
     // "32 – Text..." oder "32 - Text..." oder "Nr. 12 Text..."
-    if (/^\d{1,4}\s*[–\-:.]\s*.+/.test(firstLine)) {
+    // \s+ nach dem Trenner: "1.Ichbin..." (Vers-Nummer angeschmiegt) ist KEIN Titel
+    if (/^\d{1,4}\s*[–\-:.]\s+.+/.test(firstLine)) {
       console.log(`  Titel-Zeile entfernt: "${firstLine}"`);
       lines.shift();
     }
@@ -3366,7 +3563,7 @@ async function ocrWithVisionAPI(base64Image) {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(body)
-  });
+  }, 2, 120000);
 
   console.log('    Vision API Response — Status:', response.status, response.statusText);
 
@@ -3403,12 +3600,18 @@ async function ocrWithVisionAPI(base64Image) {
 let lastImportedImageBase64 = null; // Für multimodale Gemini-Anfrage
 let lastImportedImageMime = null;
 let lastImportRawText = null; // Unbereinigter Import-Text für Split-Erkennung
+let lastImportLineX0s = null; // X-Startposition je rekonstruierter Zeile (Spalten-Geometrie, nur PDF-Import)
 
 function showProcessing(text, sub) {
   const overlay = document.getElementById('processingOverlay');
   document.getElementById('processingText').textContent = text;
   document.getElementById('processingSub').textContent = sub || '';
   overlay.classList.add('active');
+}
+
+function setProcessingStatus(text) {
+  const el = document.getElementById('processingSub');
+  if (el) el.textContent = text;
 }
 
 function hideProcessing() {
@@ -3431,7 +3634,7 @@ function showOcrWarning(type) {
   const header = document.getElementById('ocrDialogHeader');
   const body = document.getElementById('ocrDialogBody');
   if (type === 'audio') {
-    header.textContent = '🎵 Hinweis zur Audio-Transkription';
+    header.innerHTML = iconSvg('i-music') + ' Hinweis zur Audio-Transkription';
     body.innerHTML = `<strong>Audio-Transkriptionen müssen sorgfältig geprüft werden!</strong>
       <ul>
         <li>Jede Zeile mit der <strong>Originalaufnahme vergleichen</strong>.</li>
@@ -3439,7 +3642,7 @@ function showOcrWarning(type) {
         <li>Besonders <strong>Namen, Fremdwörter und leise Passagen</strong> prüfen.</li>
       </ul>`;
   } else {
-    header.textContent = '🔍 Hinweis zur Texterkennung (OCR)';
+    header.innerHTML = iconSvg('i-search') + ' Hinweis zur Texterkennung (OCR)';
     body.innerHTML = `<strong>OCR-erkannter Text muss sorgfältig geprüft werden!</strong>
       <ul>
         <li>Jede Zeile mit dem <strong>Originaldokument vergleichen</strong>.</li>
@@ -3521,48 +3724,600 @@ async function importFileToSong(file) {
 
 // ─── Gemini KI-Bereinigung ────────────────────────────────────────────────────
 
-const GEMINI_CLEANUP_PROMPT = `Du bekommst einen Liedtext der möglicherweise zweisprachig ist (Deutsch + Russisch) und aus verschiedenen Quellen stammen kann (OCR, Word-Dokument, Audio-Transkription, manuell eingetippt). Der Text kann zerstückelt, falsch formatiert oder unstrukturiert sein.
+const GEMINI_CLEANUP_PROMPT = `Du bekommst einen Liedtext der möglicherweise zweisprachig ist (Deutsch + Russisch) und aus verschiedenen Quellen stammen kann (OCR, Word-Dokument, Audio-Transkription, manuell eingetippt). Der Text kann zerstückelt, falsch formatiert oder unstrukturiert sein. Falls ein Bild der Originalseite mitgeliefert wird, nutze es als verbindliche Quelle für Wortlaut und Strophenstruktur.
 
-Deine Aufgabe: Bringe den Text in ein STANDARDISIERTES FORMAT.
+Deine Aufgabe: BRINGE DEN TEXT IN STRUKTURIERTES FORMAT, OHNE DEN WORTLAUT ZU VERÄNDERN.
 
-STRIKTE REGELN:
-- ÜBERSETZE NIEMALS den Text! Behalte die Originalsprache(n) EXAKT bei. Ein russischer Text MUSS russisch bleiben, ein deutscher Text MUSS deutsch bleiben.
-- Gib NUR den formatierten Liedtext zurück. KEINE Erklärungen, KEIN Markdown, KEINE Codeblöcke.
-- KEINEN Titel oder Überschrift.
-- KEINE Strophennummern (1., 2., 3.).
-- Entferne Akkord-Symbole, Copyright-Zeilen, Autorenangaben und Liednummern.
-- Füge getrennte Silben zusammen.
-- Jede Liedzeile soll eine vollständige, sinnvolle Textzeile sein.
+STRIKTE TRANSKRIPTIONSREGELN (wichtigste Regel):
+- Der Wortlaut ist HEILIG. Übernimm Jedes Wort EXAKT so, wie es in der Quelle steht.
+- NIEMALS Wörter ersetzen, umformulieren, ergänzen oder weglassen. Auch keine "Verbesserungen" von Wörtern, die dir seltsam erscheinen — sie können korrekt sein.
+- ÜBERSETZE NIEMALS. Behalte die Originalsprache(n) EXAKT bei. Ein russischer Text MUSS russisch bleiben, ein deutscher Text MUSS deutsch bleiben.
+- Erlaubt ist NUR: a) gequetschte/zusammengezogene Wörter trennen (z.B. "Wiesehrsein" → "Wie sehr sein"), b) Worttrennungen am Zeilenende zusammenfügen ("da-" + "für" → "dafür"), c) Akkorde, Liednummern, Copyright- und Autorenzeilen entfernen, d) Zeilen an sinnvollen Stellen umbrechen, e) bei mehrspaltigem Layout (Partituren) vermischt extrahierte Zeilen korrekt wieder zusammensetzen — Wörter dabei niemals ändern, ergänzen oder wegwerfen.
+- MEHRSPALTIGE PARTITUREN: Das Seitenbild zeigt die echte Anordnung. Bei Partituren stehen die Strophen NEBENEINANDER in Spalten (Spalte 1 = Strophe 1, Spalte 2 = Strophe 2, ...). Die OCR-Textzeilen sind zeilenweise über alle Spalten gelaufen — eine einzelne OCR-Zeile enthält daher oft FRAGMENTE mehrerer Strophen gemischt. Zerlege jede gemischte OCR-Zeile anhand des Seitenbildes in ihre Spalten-Fragmente und ordne jedes Fragment der richtigen Strophe zu.
+- Der Quelltext kann das Trennzeichen " | " enthalten: Es markiert eine Layout-Blockgrenze im Original (häufig: Ende einer Strophenzeile | Beginn der nächsten Textzeile darunter, z.B. der ersten Refrainzeile). Trenne an " | " und ordne beide Teile anhand des Seitenbildes dem richtigen Abschnitt zu — " | " gehört NICHT in die Ausgabe.
+- Das Zeichen "‖" verbindet zwei Textteile, die im Original EINE zusammenhängende Zeile ergeben: füge sie zu einem Fließtext zusammen — ohne Leerzeichen, wenn es eine Wortfortsetzung ist (z.B. "auser ‖ wählt." → "auserwählt."), sonst mit Leerzeichen ("seiner ‖ ruht." → "seiner ruht."). Das Zeichen "‖" selbst gehört NICHT in die Ausgabe.
+- Ein Wort, dessen Buchstaben nicht in der Quelle erkennbar sind, darf NICHT geraten werden. Im Zweifel den erkennbaren Teil übernehmen und unsichere Stelle mit [...] markieren.
 
-ZWEISPRACHIGES FORMAT:
-Wenn der Text ZWEI Sprachen enthält (z.B. Deutsch und Russisch):
-- Schreibe IMMER abwechselnd: eine deutsche Zeile, dann die entsprechende russische Zeile.
-- Die deutsche und russische Zeile müssen inhaltlich zueinander passen (gleiche Bedeutung/Strophenposition).
-- Trenne Strophen/Abschnitte mit genau EINER Leerzeile.
-- Wenn der Text einen Refrain hat, schreibe "Refrain" auf einer eigenen Zeile davor (nur einmal, nicht nach jeder Strophe wiederholen).
+VOLLSTÄNDIGKEIT (genauso wichtig wie der Wortlaut):
+- Jede Textzeile der Quelle MUSS im Ergebnis enthalten sein. Lass KEINE Zeile weg.
+- Strophen-Zeilen gehören in ihre Strophe, Refrain-Zeilen in den Refrain. Vermische sie nicht.
 
-EINSPRACHIGES FORMAT:
-Wenn der Text nur EINE Sprache enthält:
-- Belasse den Text KOMPLETT in der Originalsprache. NICHT übersetzen!
-- Trenne Strophen mit einer Leerzeile.
-- Wenn ein Refrain vorhanden ist, schreibe "Refrain" davor (bei russischen Texten: "Припев").
+STRUKTUR-REGELN:
+- Erkenne die Abschnitte des Liedes (Strophen, Refrain, Bridge). Nummerierungen wie "1." oder "2." vor Strophen kennzeichnen den Abschnittsanfang.
+- Jede Zeile eines Abschnitts als eigenes Element im "lines"-Array. KEINE Leerzeilen innerhalb eines Abschnitts.
+- Setze als "label": "Strophe 1", "Strophe 2", ... für Strophen (Nummer wenn erkennbar), "Refrain" für Refrains (bei russischen Texten: "Припев"), "Bridge" für Bridges, oder "" wenn kein Label passt.
+- KEINEN Titel oder Überschrift aufnehmen.
+- Zweisprachige Texte: Schreibe IMMER abwechselnd eine deutsche Zeile, dann die entsprechende russische Zeile. Die Zeilen müssen inhaltlich zueinander passen (gleiche Bedeutung/Strophenposition).
+- Der Refrain wird als EIGENER Abschnitt mit Label "Refrain" ausgegeben, NIEMALS in einen Strophen-Abschnitt integriert und NIEMALS weggelassen. Gib ihn GENAU EINMAL aus, an der Position wo er in der Quelle steht (bei Partituren steht er einmal unter den Spalten). Wiederhole ihn NICHT mehrfach — die App wiederholt ihn automatisch nach jeder Strophe.
 
-BEISPIEL ZWEISPRACHIG:
-Ehre sei Dir, Erlöser!
-Честь Тебе, Спаситель!
-Mein Herr und Gott!
-Мой Господь и Бог!
+Antworte AUSSCHLIESSLICH als JSON gemäß dem vorgegebenen Schema. Keine Erklärungen.`;
 
-Um die Sünder zu retten,
-Чтоб грешников спасти,
-hast Du die Herrlichkeit verlassen.
-решился Ты славу оставить.
+const GEMINI_CLEANUP_SCHEMA = {
+  type: 'OBJECT',
+  properties: {
+    bilingual: { type: 'BOOLEAN', description: 'true wenn der Text zwei Sprachen enthält (z.B. Deutsch + Russisch)' },
+    sections: {
+      type: 'ARRAY',
+      items: {
+        type: 'OBJECT',
+        properties: {
+          label: { type: 'STRING', description: 'Abschnittslabel wie "Strophe 1", "Refrain", "Bridge" oder leer' },
+          lines: { type: 'ARRAY', items: { type: 'STRING' }, description: 'Liedzeilen des Abschnitts' }
+        },
+        required: ['lines']
+      }
+    }
+  },
+  required: ['sections']
+};
 
-Refrain
-Herr, Deine Liebe ist so groß,
-Господи, Твоя любовь велика,
-dass ich sie nie begreifen kann.
-что я не могу её постичь.`;
+// Pipeline-Call 1: Reine Transkription OHNE Struktur — jeder Textblock eine eigene Zeile.
+// Die Trennung von Transkription und Zuordnung verhindert, dass ein Struktur-Retry
+// den Wortlaut neu erzeugt (Zeilen droppen/umbauen).
+const GEMINI_TRANSCRIBE_PROMPT = `Du bekommst eine nummerierte Liste von Textblöcken (möglicherweise OCR-Output aus einem Notenblatt/Partitur-PDF) und optional das Bild der Originalseite.
+
+Deine Aufgabe: TRANSCRIBIERE DIE BLÖCKE IN LESBAREN FLIESSTEXT — GENAU EINE AUSGABEZEILE PRO EINGABEBLOCK, in derselben Reihenfolge. KEINE Abschnitte, KEINE Labels, KEINE Titel. Blöcke werden NICHT zusammengelegt und NICHT aufgeteilt.
+
+STRIKTE TRANSKRIPTIONSREGELN (wichtigste Regel):
+- Der Wortlaut ist HEILIG. Übernimm Jedes Wort EXAKT so, wie es in der Quelle steht. NIEMALS Wörter ersetzen, umformulieren, ergänzen oder weglassen.
+- ÜBERSETZE NIEMALS. Behalte die Originalsprache(n) EXAKT bei.
+- Gequetschte/zusammengezogene Wörter trennen (z.B. "Wiesehrsein" → "Wie sehr sein").
+- Silbentrennungen zusammenfügen ("da-" + "für" → "dafür", auch innerhalb eines Blocks).
+- Das Zeichen "‖" verbindet zwei Textteile, die im Original EINE zusammenhängende Zeile ergeben: füge sie zu EINEM Fließtext zusammen — ohne Leerzeichen, wenn es eine Wortfortsetzung ist (z.B. "auser ‖ wählt." → "auserwählt."), sonst mit Leerzeichen ("seiner ‖ ruht." → "seiner ruht."). Der Block bleibt EINE Zeile; das Zeichen "‖" selbst gehört NICHT in die Ausgabe.
+- Akkorde, Liednummern, Copyright- und Autorenzeilen entfernen.
+- Besteht ein Eingabe-Block NUR aus einem Abschnitts-Label ("Strophe 1", "Refrain", "Bridge", …), gib das Label UNVERÄNDERT als eigene Zeile zurück — auch Labels zählen zur 1:1-Zählung.
+- Die Ausgabe muss GENAU so viele Einträge haben wie die Eingabe (1:1, Reihenfolge beibehalten).
+
+Antworte AUSSCHLIESSLICH als JSON gemäß dem vorgegebenen Schema. Keine Erklärungen.`;
+
+const GEMINI_TRANSCRIBE_SCHEMA = {
+  type: 'OBJECT',
+  properties: {
+    lines: { type: 'ARRAY', items: { type: 'STRING' }, description: 'Genau eine Ausgabezeile pro Eingabe-Block, in derselben Reihenfolge (1:1)' }
+  },
+  required: ['lines']
+};
+
+// Pipeline-Call 2: Struktur-Zuordnung — das Modell ordnet nur Indizes zu, es schreibt
+// KEINEN Text. Dadurch sind Wortverlust/Zeilen-Merging strukturell ausgeschlossen.
+const GEMINI_ASSIGN_PROMPT = `Du bekommst die Textblöcke eines Liedes in Lesereihenfolge und optional das Bild der Originalseite.
+
+Deine Aufgabe: ORNE JEDEN BLOCK GENAU EINEM ABSCHNITT ZU. Du schreibst KEINEN Text — es werden nur Block-Nummern zugewiesen.
+
+LAYOUT-REGELN (wichtig für Partituren/Liedblätter):
+- Die Blöcke stehen in derselben Reihenfolge wie im Original (oben nach unten) — aber die LESEREIHENFOLGE ist nicht immer die LIEDREIHENFOLGE: Bei Partituren mit verschachtelten Spalten (mehrere Strophen nebeneinander unter einem Notensystem, mehrstimmige Sätze mit Spaltenwechsel je Zeile) stehen Fragmente verschiedener Verse im Wechsel. Ordne die Blöcke dann so, dass jede Strophe grammatikalisch und inhaltlich vollständig ist.
+- REIHENFOLGE WIRKT: Die Reihenfolge der Block-Nummern INNERHALB eines Abschnitts bestimmt die Zeilenreihenfolge des Ergebnisses. Liste sie also in der korrekten Liedtext-Reihenfolge — Fragmente derselben Verszeile direkt hintereinander (auch wenn sie im Original weit auseinanderliegen). Ein Abschnitt darf Block-Nummern in beliebiger Reihenfolge enthalten.
+- Kurze Fortsetzungs-Blöcke ("ruht.", "gut!", "Herz.", "schützt!") gehören zu der Textzeile, die sie syntaktisch vervollständigen — vergleiche mit dem Seitenbild, wo sie visuell anknüpfen.
+- SPALTEN-GEOMETRIE: Wenn eine "BINDENDE Layout-Klassifikation" mitgeliefert wird, ist sie verpflichtend — Blöcke in der Strophen-Fortsetzungsspalte gehören zu den Strophen, niemals zum Refrain, egal wie sehr ihr Wortlaut nach Kehrreim klingt. Der Refrain steht typografisch abgesetzt (eigene X-Spalte) und beginnt erst, wenn ALLE nummerierten Strophen vollständig sind.
+- WICHTIG: Strophen und Refrain liegen bei Liedblättern oft VERSCHACHTELT (Refrainzeilen zwischen Strophenzeilen-Enden). Die Block-Nummern eines Abschnitts müssen deshalb NICHT aufeinanderfolgend sein.
+
+REGELN:
+- Jede Block-Nummer darf in deiner gesamten Antwort GENAU EINMAL vorkommen. Keine Nummer auslassen, keine doppelt.
+- Labels: "Strophe 1", "Strophe 2", ... für Strophen (Nummer wenn erkennbar, z.B. an Vers-Nummern im Original), "Refrain" für den Refrain (bei russischen Texten: "Припев"), "Bridge" für Bridges, "" wenn kein Label passt.
+- LIES jeden Block: Gehört er inhaltlich zur nummerierten Strophe (Vers-Erzählung) oder ist er Teil des Refrains (Kehrreim, der sich inhaltlich wiederholt/an den Strophen hängt)?
+- Der Refrain wird als EIGENER Abschnitt mit Label "Refrain" ausgegeben, GENAU EINMAL, mit ALLEN seinen Blöcken (Kopf, Mittelteil und Ende — auch Fortsetzungs-Blöcke wie "gut!" oder "reich!").
+- Reihenfolge der Abschnitte = Reihenfolge der zugeordneten Block-Nummern (kleinste Nummer zuerst).
+
+Antworte AUSSCHLIESSLICH als JSON gemäß dem vorgegebenen Schema. Keine Erklärungen.`;
+
+const GEMINI_ASSIGN_SCHEMA = {
+  type: 'OBJECT',
+  properties: {
+    sections: {
+      type: 'ARRAY',
+      items: {
+        type: 'OBJECT',
+        properties: {
+          label: { type: 'STRING', description: 'Abschnittslabel wie "Strophe 1", "Refrain", "Bridge" oder leer' },
+          blockIndexes: { type: 'ARRAY', items: { type: 'INTEGER' }, description: '1-basierte Nummern der diesem Abschnitt zugeordneten Blöcke, in der ZEILENREIHENFOLGE des fertigen Abschnitts (nicht zwingend in Lesereihenfolge)' }
+        },
+        required: ['label', 'blockIndexes']
+      }
+    }
+  },
+  required: ['sections']
+};
+
+function rebuildFromSections(sections) {
+  if (!Array.isArray(sections)) return '';
+  const blocks = [];
+  for (const sec of sections) {
+    if (!sec || !Array.isArray(sec.lines)) continue;
+    // Falls das Modell den " | "-Marker (Textblock-Grenze) trotzdem ausgibt: als Zeilenumbruch interpretieren;
+    // verbliebene "‖"-Marker (Zeilenpaarung) als Leerzeichen auflösen (Sicherheitsnetz)
+    const lines = sec.lines.flatMap(l => String(l).trim().replace(/\s*‖\s*/g, ' ').split(' | ')).filter(Boolean);
+    if (!lines.length) continue;
+    let label = String(sec.label || '').trim();
+    if (/^\d+\.?$/.test(label)) label = 'Strophe ' + parseInt(label, 10);
+    if (/^(chor|chorus|припев)$/i.test(label)) label = 'Refrain';
+    if (!label && /^\d+\.?\s*$/.test(lines[0])) {
+      label = 'Strophe ' + parseInt(lines[0], 10);
+      lines.shift();
+    }
+    if (label) lines.unshift(label);
+    blocks.push(lines.join('\n'));
+  }
+  // Silbentrennung über Zeilengrenzen zusammenfügen: "ge-" + "borgen" → "geborgen"
+  // (Gemini setzt den Bindestrich auch an den Anfang der Folgelinie: "ge-" + "-borgen")
+  const ls = blocks.join('\n\n').split('\n');
+  const joined = [];
+  for (let i = 0; i < ls.length; i++) {
+    const t = ls[i].trimEnd();
+    const next = i + 1 < ls.length ? ls[i + 1].trim() : '';
+    if (t.match(/\p{L}-$/u) && next.match(/^-\p{Ll}/u)) {
+      joined.push(t.slice(0, -1) + next.slice(1));
+      i++;
+    } else if (t.match(/\p{L}-$/u) && next.match(/^\p{Ll}/u)) {
+      joined.push(t.slice(0, -1) + next);
+      i++;
+    } else {
+      joined.push(ls[i]);
+    }
+  }
+  return joined.join('\n');
+}
+
+function cleanupFreeTextResponse(rawText) {
+  // Markdown Codeblöcke entfernen falls Gemini sie erzeugt
+  let lines = rawText.replace(/^```\w*\n?/gm, '').replace(/\n?```$/gm, '').replace(/\s*‖\s*/g, ' ').split('\n');
+
+  // Führende Strophennummern in Labels umwandeln: "1. Text" → "Strophe 1" + "Text"
+  lines = lines.flatMap(line => {
+    const m = line.trim().match(/^(\d+)\.\s+(.*)$/);
+    if (m) return ['Strophe ' + m[1], m[2]];
+    return [line];
+  });
+
+  // Zeilenübergreifende Silbentrennung reparieren: "da-" + "für." → "dafür."
+  const joined = [];
+  for (let i = 0; i < lines.length; i++) {
+    const t = lines[i].trimEnd();
+    if (t.match(/\p{L}-$/u) && i + 1 < lines.length && lines[i + 1].trim().match(/^\p{Ll}/u)) {
+      joined.push(t.slice(0, -1) + lines[i + 1].trim());
+      i++;
+    } else {
+      joined.push(lines[i]);
+    }
+  }
+
+  // Titel-Duplikat entfernen: Wenn die erste Zeile (oder Teile davon) im restlichen Text vorkommt
+  if (joined.length >= 2) {
+    const first = joined[0].trim();
+    if (first && !isSectionLabel(first)) {
+      const rest = joined.slice(1).join('\n');
+      if (rest.includes(first)) {
+        console.log(`  Titel-Duplikat entfernt: "${first}"`);
+        joined.shift();
+        while (joined.length && !joined[0].trim()) joined.shift();
+      }
+    }
+  }
+
+  return joined.join('\n')
+    .replace(/^(CHOR|Chorus|Припев)\s*:?\s*$/gim, 'Refrain')
+    .trim();
+}
+
+function normalizeForFidelity(text) {
+  return text.toLowerCase().replace(/[^\p{L}]+/gu, '');
+}
+
+function checkLyricsFidelity(original, cleaned) {
+  // Abschnitts-Labels herausfiltern (vom Rebuild hinzugefügte Struktur, kein Lyrik-Wortlaut) —
+  // auf BEIDEN Seiten, sonst gelten "strophe"/"refrain" im Original als fehlende Wörter
+  const stripLabels = txt => txt.split('\n').filter(l => l.trim() && !isSectionLabel(l.trim())).join('\n');
+  const originalLyrics = stripLabels(original);
+  const cleanedLyrics = stripLabels(cleaned);
+  const a = normalizeForFidelity(originalLyrics);
+  const b = normalizeForFidelity(cleanedLyrics);
+  // OCR-Tokens — Wörter können durch Spaltenumbrüche/Silbentrennung getrennt sein
+  const tokens = originalLyrics.toLowerCase().match(/\p{L}+/gu) || [];
+  // Wörter im Ergebnis, die (ohne Trennzeichen/gequetscht) nicht im Original vorkommen
+  const changedWords = [];
+  const changedSeen = new Set();
+  for (const w of cleanedLyrics.split(/\s+/)) {
+    const wn = w.toLowerCase().replace(/[^\p{L}]+/gu, '');
+    if (wn.length < 2 || a.includes(wn) || changedSeen.has(wn)) continue;
+    changedSeen.add(wn);
+    // Legitim: Wort ist aus Wortteilen zusammengesetzt (Suffix eines Tokens + Präfix eines anderen)
+    let ok = false;
+    for (let k = 2; k <= wn.length - 2; k++) {
+      if (tokens.some(t => t.endsWith(wn.slice(0, k))) && tokens.some(t => t.startsWith(wn.slice(k)))) {
+        ok = true;
+        break;
+      }
+    }
+    if (!ok) changedWords.push(w.trim());
+  }
+  // Verlust-Check: Originalwörter, die im Ergebnis fehlen.
+  // Akkord-ähnliche Tokens (nur a-g/b/#, z.B. "amdme") sind legitime Entfernungen.
+  const missingWords = [];
+  const seen = new Set();
+  for (const t of tokens) {
+    if (t.length < 4 || seen.has(t)) continue;
+    seen.add(t);
+    if (/^[a-gm#]+$/.test(t)) continue;
+    if (!b.includes(t)) missingWords.push(t);
+  }
+  return { changedWords, missingWords };
+}
+
+// Struktur-Check: bei ≥ 2 Strophen gehört der Refrain nach jeder Strophe
+// (App-Semantik: Refrain 1/2/…/Refrain L als Abschluss). Weniger Refrain-Abschnitte
+// als Strophen = Strukturfehler, den der Wortlaut-Check nicht erkennen kann.
+function checkRefrainStructure(sections) {
+  if (!Array.isArray(sections)) return { strophes: 0, refrains: 0, issue: false, refrainLines: [] };
+  let strophes = 0, refrains = 0;
+  const refrainContents = [];
+  const refrainLineSets = [];
+  const stropheLines = [];
+  for (const sec of sections) {
+    const label = String(sec && sec.label || '').toLowerCase();
+    if (/refrain|припев/.test(label)) { refrains++; refrainContents.push(String((sec.lines || []).join(' ')).toLowerCase().replace(/[^\p{L}]+/gu, '')); refrainLineSets.push((sec.lines || []).map(l => String(l))); }
+    else if (/strophe|куплет|verse|vers/.test(label) || /^\d/.test(label)) { strophes++; stropheLines.push((sec.lines || []).map(l => String(l).toLowerCase().replace(/[^\p{L}]+/gu, ''))); }
+  }
+  // Invariante: alle Refrain-Kopien müssen identisch sein (bei Partituren wird der
+  // gleiche Refrain nach jeder Strophe wiederholt) und der Refrain darf nicht in Strophen stecken
+  const refrainHead = refrainContents.length ? refrainContents[0].slice(0, 40) : '';
+  const refrainsIdentical = refrainContents.every(c => c === refrainContents[0]);
+  const refrainInStrophe = !!refrainHead && stropheLines.some(lines => lines.some(l => l.includes(refrainHead)));
+  const issue = (strophes >= 2 && refrains === 0)
+    || (strophes === 0 && refrains === 0 && sections.length >= 2)
+    || (refrains >= 2 && !refrainsIdentical)
+    || refrainInStrophe;
+  return { strophes, refrains, issue, refrainLines: refrainLineSets.length ? refrainLineSets[0] : [] };
+}
+
+// Deterministische Vollständigkeits-Checks für Liedblatt-Layouts:
+// 1) Der Quelle sind Vers-Nummern ("1. Text", "2. Text", …) zu entnehmen — liefert das
+//    Modell weniger Strophen-Abschnitte, wurden Zeilen zusammengelegt.
+// 2) Steht der Refrain im Quelltext hinten (Liedblatt: Refrain läuft unter den letzten
+//    Notensystemen weiter), muss der Refrain-Abschnitt die letzten Wörter der Quelle enthalten.
+// Vers-Nummern ("1. Text", "2.Text", …) zählen — als Fallback auch im UNbereinigten
+// Import-Rohtext, denn cleanOcrText entfernt die Nummern, bevor der Cleanup läuft
+function countExpectedStrophes(rawText) {
+  const set = new Set();
+  const sources = [String(rawText || '')];
+  if (typeof lastImportRawText === 'string' && lastImportRawText) sources.push(lastImportRawText);
+  // \s*\S statt \s+\S: gequetschte OCR kennt kein Leerzeichen ("1.Ichbinsofroh,anGott…")
+  for (const src of sources) for (const m of src.matchAll(/^\s*(\d+)[.)]\s*\S/gmu)) set.add(m[1]);
+  return set;
+}
+
+function checkStructureCompleteness(rawText, structure, sections) {
+  const issues = [];
+  const expectedStrophes = countExpectedStrophes(rawText);
+  // Die Quelle ist durch Labels strukturiert ("Strophe 1", "Refrain", …)? Dann muss das
+  // Ergebnis mindestens genauso viele Abschnitte haben — Collaps in EINEN Abschnitt erkennen
+  const expectedSections = String(rawText || '').split('\n').filter(l => isSectionLabel(l.trim())).length;
+  if (expectedSections >= 2 && Array.isArray(sections) && sections.length < expectedSections) {
+    issues.push(`Die Quelle enthält ${expectedSections} Abschnitte, dein Ergebnis aber nur ${sections.length} — du hast Abschnitte zusammengelegt. Jedes Label der Quelle ("Strophe 1", "Refrain", …) ist ein EIGENER Abschnitt.`);
+  }
+  if (expectedStrophes.size >= 2 && structure.strophes < expectedStrophes.size) {
+    issues.push(`Die Quelle enthält ${expectedStrophes.size} nummerierte Strophen, dein Ergebnis hat aber nur ${structure.strophes} — du hast Strophenzeilen zusammengelegt. Jede nummerierte Strophe muss ein EIGENER Abschnitt sein.`);
+  }
+  // Die letzten Wörter der Quelle müssen im LETZTEN Abschnitt des Ergebnisses landen —
+  // bei Liedblättern ist das der Refrain (läuft unter den letzten Notensystemen weiter),
+  // bei einfachen Dokumenten die letzte Strophe
+  const tail = String(rawText || '').trim().split('\n').filter(Boolean).slice(-1)[0] || '';
+  const tailHead = tail.toLowerCase().replace(/[^\p{L}]+/gu, '').slice(0, 16);
+  const lastSection = Array.isArray(sections) && sections.length ? sections[sections.length - 1] : null;
+  if (lastSection && tailHead) {
+    const lastText = (lastSection.lines || []).map(l => String(l)).join(' ').toLowerCase().replace(/[^\p{L}]+/gu, '');
+    if (lastText && lastText.length > tailHead.length && !lastText.includes(tailHead)) {
+      issues.push(`Die letzten Wörter der Quelle ("${tail}") fehlen im letzten Abschnitt ("${lastSection.label || 'unbenannt'}") — Zeilen wurden gedroppt oder falsch zugeordnet.`);
+    }
+  }
+  return issues;
+}
+
+// Bestraft Kandidaten mit Fragment-Zeilen (typisch OCR-Musch bei gescannten Partituren,
+// wo Stimmen interleaved sind): Zeilen mit unter 3 Wörtern zählen als Fragmente. Die
+// Single-Call-Reassemblierung schreibt den Text neu und kann Fragmente heilen, die
+// Block-Gruppierung nicht — der Score muss das also SYMMETRISCH gegen beide zählen.
+function fragmentLinePenalty(parsedSections) {
+  const lines = (Array.isArray(parsedSections) ? parsedSections : [])
+    .flatMap(s => (s && Array.isArray(s.lines)) ? s.lines : []);
+  return lines.filter(l => String(l).trim().split(/\s+/).filter(Boolean).length < 3).length;
+}
+
+// Anteil kurzer Zeilen (< 3 Wörter) in der Quelle. Hohe Quote = interleaved OCR-Musch
+// (gescannte mehrstimmige Partituren): dort kann nur die Single-Call-Reassemblierung heilen,
+// die Block-Gruppierung der Pipeline nie — die Pipeline läuft dann nur Zeit gegen die Wand.
+function sourceFragmentQuote(rawText) {
+  const lines = String(rawText || '').split('\n').map(l => l.trim()).filter(l => l && !isSectionLabel(l));
+  if (!lines.length) return 0;
+  const frags = lines.filter(l => l.split(/\s+/).filter(Boolean).length < 3).length;
+  return frags / lines.length;
+}
+
+// Verdächtige Single-Call-Zuordnung: formale Strukturverletzung, ODER ein Refrain-Abschnitt
+// schluckt mindestens doppelt so viele Zeilen wie die längste Strophe (typisches Missbild:
+// Strophenpaare à 2 Zeilen + alle Fortsetzungs-Zeilen in einem Riesen-Refrain)
+function singleCallStructureSuspicious(result) {
+  if (result?.structure?.issue) return true;
+  const secs = Array.isArray(result?.parsedSections) ? result.parsedSections : [];
+  const stropheLines = secs
+    .filter(s => /strophe|куплет|verse|vers/i.test(String(s?.label || '')) || /^\d/.test(String(s?.label || '')))
+    .map(s => Array.isArray(s?.lines) ? s.lines.length : 0);
+  const refrainLines = secs
+    .filter(s => /refrain|припев/i.test(String(s?.label || '')))
+    .reduce((n, s) => n + (Array.isArray(s?.lines) ? s.lines.length : 0), 0);
+  return stropheLines.length >= 2 && refrainLines >= 2 * Math.max(...stropheLines);
+}
+
+// 2-Call-Pipeline für harte Fälle (Liedblatt-Layouts): Call 1 transkribiert den Wortlaut
+// in atomare Blöcke (kein Thinking), Call 2 ordnet die Blöcke Abschnitten zu (mit Thinking,
+// ohne selbst Text zu schreiben). Dadurch kann der Struktur-Schritt keine Zeilen droppen
+// oder zusammenkleben — Wortverlust ist strukturell ausgeschlossen.
+// Wartet auf den Rate-Limiter statt hart zu scheitern — die Pipeline folgt direkt auf den
+// Single-Call und läuft sonst in dessen 1s-Cooldown (ganzes Cleanup würde abbrechen)
+async function awaitRateLimit(apiName, maxWaitMs = 15000) {
+  const t0 = Date.now();
+  while (!checkRateLimit(apiName)) {
+    if (Date.now() - t0 > maxWaitMs) return false;
+    await new Promise(r => setTimeout(r, 500));
+  }
+  return true;
+}
+
+// Atomare Einträge + Spalten-Geometrie aus dem Import-Rohtext: Label-Zeilen ("Strophe 1",
+// "Refrain", …) sind Abschnittsgrenzen, keine Lyrics. Die X-Startpositionen der rekonstruierten
+// PDF-Zeilen werden über normalisierten Wortlaut auf die Einträge gemappt (Two-Pointer über die
+// Lesereihenfolge — Index-Matching reicht nicht, cleanOcrText ändert die Zeilenanzahl). Ohne
+// Match bleibt x0 null. Daraus die deterministische Spalten-Klassifikation: Vers-Nummern-Blöcke
+// definieren die Strophen-Startspalte; Blöcke in der eingerückten Fortsetzungsspalte
+// (Startspalte + Nummernbreite) sind Strophen-Fortsetzungen. Nur bei eindeutigem Muster
+// (Startspalten eng gebündelt, ≥2 Fortsetzungs-Blöcke) entsteht ein bindender columnHint.
+function computeGeometryContext(rawText) {
+  const entries = [];
+  const entryX0s = [];
+  String(rawText || '').split('\n').forEach(line => {
+    line.split(' | ').forEach(part => {
+      const t = part.trim();
+      if (t && !isSectionLabel(t)) { entries.push(t); entryX0s.push(null); }
+    });
+  });
+  const entryVerseNums = entries.map(() => null);
+  const rawLines = (typeof lastImportRawText === 'string' && Array.isArray(lastImportLineX0s)
+    && lastImportLineX0s.length === lastImportRawText.split('\n').length) ? lastImportRawText.split('\n') : null;
+  if (rawLines) {
+    const normLetters = t => String(t).toLowerCase().replace(/[^\p{L}]+/gu, '');
+    const rawNorm = rawLines.map(normLetters);
+    let cursor = 0;
+    entries.forEach((e, i) => {
+      const ne = normLetters(e);
+      if (!ne) return;
+      for (let j = cursor; j < rawLines.length; j++) {
+        if (rawNorm[j].includes(ne) || (ne.includes(rawNorm[j]) && rawNorm[j].length > 8)) {
+          entryX0s[i] = lastImportLineX0s[j];
+          const vm = /^\s*(\d+)[.)]/.exec(rawLines[j]);
+          if (vm) entryVerseNums[i] = Number(vm[1]);
+          cursor = j;
+          break;
+        }
+      }
+    });
+  }
+  let columnHint = null;
+  const numberedX0s = entryX0s.filter((x0, i) => x0 != null && entryVerseNums[i] != null);
+  const others = entryX0s.map((x0, i) => ({ i, x0 }))
+    .filter(o => o.x0 != null && entryVerseNums[o.i] == null);
+  if (numberedX0s.length >= 2) {
+    const minX = Math.min(...numberedX0s);
+    const spread = Math.max(...numberedX0s) - minX;
+    if (spread <= 10) {
+      const cont = others.filter(o => o.x0 > minX + 8 && o.x0 < minX + 35);
+      if (cont.length >= 2) {
+        columnHint = {
+          continuation: cont.map(o => o.i),
+          rest: others.filter(o => !(o.x0 > minX + 8 && o.x0 < minX + 35)).map(o => o.i)
+        };
+      }
+    }
+  }
+  return { entries, entryX0s, columnHint };
+}
+
+async function runCleanupPipeline(rawText, geometryContext) {
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GOOGLE_API_KEY}`;
+  const imageParts = (lastImportedImageBase64 && lastImportedImageMime)
+    ? [{ inline_data: { mime_type: lastImportedImageMime, data: lastImportedImageBase64 } }] : [];
+
+  // ---- Call 1: Transkription in atomare Blöcke (1:1) ----
+  // Die atomaren Blöcke werden DETERMINISTISCH aus dem Rohtext gesplittet (Zeile + " | "-
+  // Grenzen) — das Modell bekommt die nummerierte Blockliste und darf nur noch bereinigen,
+  // nicht mehr selbst splitten (dessen freie Split-Entscheidung erzeugte zuvor Fragment-Chaos).
+  // Label-Zeilen ("Strophe 1", "Refrain", …) sind Abschnittsgrenzen, keine Lyrics — sie
+  // würden sonst als Inhaltszeilen in den Abschnitten landen (doppelte Labels im Output)
+  const stripLabels = txt => txt.split('\n').filter(l => !isSectionLabel(l.trim())).join('\n');
+  const { entries, entryX0s, columnHint } = geometryContext || computeGeometryContext(rawText);
+  const entryListText = entries.map((t, i) => '[' + (i + 1) + '] ' + t).join('\n');
+  let blocks = [];
+  let call1Fidelity = null;
+  for (let attempt = 1; attempt <= 2; attempt++) {
+    if (!(await awaitRateLimit('gemini'))) throw new Error('Rate Limit');
+    const parts = [{ text: GEMINI_TRANSCRIBE_PROMPT }, ...imageParts,
+      { text: (imageParts.length ? 'Das ist das Originalbild des Liedtexts.\n\n' : '') + 'Hier sind die nummerierten Textblöcke:\n\n' + entryListText }];
+    if (attempt > 1 && call1Fidelity) {
+      const miss = call1Fidelity.missingWords.slice(0, 10).join(', ');
+      const chg = call1Fidelity.changedWords.slice(0, 10).join(', ');
+      parts.push({ text: 'WICHTIG: Deine Transkription ist unvollständig oder verändert.' + (miss ? ' Fehlende Wörter aus der Quelle: ' + miss + '.' : '') + (chg ? ' Wörter, die nicht im Original vorkommen: ' + chg + '.' : '') + ' Ergänze die fehlenden Wörter an der richtigen Position und stelle den exakten Original-Wortlaut wieder her. Liefere GENAU EINE Zeile pro Eingabe-Block (insgesamt ' + entries.length + ').' });
+    }
+    setProcessingStatus('Pipeline 1/2: Transkribiere Textblöcke…');
+    const generationConfig = {
+      temperature: 0.2,
+      responseMimeType: 'application/json',
+      responseSchema: GEMINI_TRANSCRIBE_SCHEMA
+    };
+    // Transkription ist mechanisch — ohne Thinking schnell; erst der Retry denkt
+    if (attempt === 1) generationConfig.thinkingConfig = { thinkingBudget: 0 };
+    const response = await fetchWithRetry(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ contents: [{ parts }], generationConfig })
+    }, 2, 120000);
+    if (!response.ok) {
+      const err = await response.json();
+      console.error('Gemini API Fehler (Transkription):', err);
+      throw new Error(err.error?.message || response.statusText);
+    }
+    const data = await response.json();
+    const rawOut = data.candidates?.[0]?.content?.parts?.map(p => p.text).join('').trim();
+    if (!rawOut) throw new Error('Leere Antwort von Gemini (Transkription)');
+    let parsed;
+    try {
+      parsed = JSON.parse(rawOut);
+    } catch (e) {
+      console.warn('[Pipeline] Transkription nicht als JSON verwertbar:', e.message);
+      continue;
+    }
+    let lines = (Array.isArray(parsed.lines) ? parsed.lines : []).map(l => String(l).trim()).filter(Boolean);
+    // 1:1-Regel: Blockanzahl muss exakt stimmen, sonst ist die Zuordnung später kaputt
+    if (lines.length !== entries.length) {
+      console.warn('[Pipeline] Transkription Versuch ' + attempt + ': ' + lines.length + ' Zeilen statt ' + entries.length + ' — 1:1 verletzt');
+      if (attempt === 2) {
+        console.warn('[Pipeline] Fallback: untranskribierte Eingabeblöcke verwenden');
+        lines = entries;
+      } else {
+        continue;
+      }
+    }
+    blocks = lines;
+    call1Fidelity = checkLyricsFidelity(stripLabels(rawText), blocks.join('\n'));
+    console.log(`[Pipeline] Transkription Versuch ${attempt}/2: ${blocks.length} Blöcke (1:1), ${call1Fidelity.missingWords.length} fehlende, ${call1Fidelity.changedWords.length} geänderte Wörter`);
+    // Nur fehlende Wörter erzwingen den Retry — geänderte Wörter sind bei Fragment-Quellen
+    // normal (das Modell korrigiert OCR-Musch) und ein Retry machte es nie besser, nur langsamer
+    if (!call1Fidelity.missingWords.length) break;
+  }
+  if (!blocks.length) throw new Error('Transkription lieferte keine Blöcke');
+
+  // ---- Call 2: Abschnitts-Zuordnung (nur Indizes, kein Text) ----
+  const blockListText = blocks.map((b, i) => '[' + (i + 1) + '] ' + b).join('\n');
+  let sections = null;
+  let cleanSections = null;
+  let structure = null;
+  let completenessIssues = [];
+  let assignFeedback = '';
+  for (let attempt = 1; attempt <= 2; attempt++) {
+    if (!(await awaitRateLimit('gemini'))) throw new Error('Rate Limit');
+    const parts = [{ text: GEMINI_ASSIGN_PROMPT }, ...imageParts,
+      { text: (imageParts.length ? 'Das ist das Originalbild des Liedtexts.\n\n' : '') + 'Textblöcke in Lesereihenfolge (Nummerierung durchgehend):\n\n' + blockListText }];
+    // Deterministischer Hinweis: nummerierte Strophen sind eigene Abschnitte
+    const expectedStrophes = countExpectedStrophes(rawText);
+    if (expectedStrophes.size >= 2) {
+      parts.push({ text: 'Hinweis: Die Quelle enthält ' + expectedStrophes.size + ' nummerierte Strophen (' + [...expectedStrophes].sort().join(', ') + '.). Jede nummerierte Strophe ist ein EIGENER Abschnitt ("Strophe 1", "Strophe 2", …) — gruppiere die nummerierten Strophenzeilen NICHT zu einem einzigen Abschnitt zusammen.' });
+    }
+    // Deterministischer Hinweis: Spalten-Geometrie (X-Startpositionen aus dem PDF-Layout)
+    if (columnHint) {
+      const contList = columnHint.continuation.map(i => '[' + (i + 1) + ']').join(', ');
+      const restList = columnHint.rest.map(i => '[' + (i + 1) + ']').join(', ');
+      parts.push({ text: 'BINDENDE Layout-Klassifikation (aus der Spalten-Geometrie des Originals, deterministisch gemessen): Die Blöcke ' + contList + ' beginnen in der Strophen-Fortsetzungsspalte — derselben X-Spalte wie der Text hinter den Vers-Nummern — und gehören ZWINGEND zu den Strophen, NICHT zum Refrain. Ordne sie in Lesereihenfolge zu: erste Fortsetzung zur Strophe 1, zweite zur Strophe 2, usw. (wenn deren Inhalt syntaktisch und inhaltlich passt). ' + (restList ? 'Die Blöcke ' + restList + ' beginnen außerhalb dieser Spalte.' : '') });
+    }
+    if (attempt > 1 && assignFeedback) parts.push({ text: assignFeedback });
+    setProcessingStatus('Pipeline 2/2: Ordne Textblöcke den Abschnitten zu…');
+    const generationConfig = {
+      temperature: 0.2,
+      responseMimeType: 'application/json',
+      responseSchema: GEMINI_ASSIGN_SCHEMA
+      // Default-Thinking: die Zuordnungs-Entscheidung ist der semantische Kern
+    };
+    const response = await fetchWithRetry(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ contents: [{ parts }], generationConfig })
+    }, 2, 120000);
+    if (!response.ok) {
+      const err = await response.json();
+      console.error('Gemini API Fehler (Zuordnung):', err);
+      throw new Error(err.error?.message || response.statusText);
+    }
+    const data = await response.json();
+    const rawOut = data.candidates?.[0]?.content?.parts?.map(p => p.text).join('').trim();
+    if (!rawOut) throw new Error('Leere Antwort von Gemini (Zuordnung)');
+    let assign;
+    try {
+      assign = JSON.parse(rawOut);
+    } catch (e) {
+      console.warn('[Pipeline] Zuordnung nicht als JSON verwertbar:', e.message);
+      continue;
+    }
+    cleanSections = (Array.isArray(assign.sections) ? assign.sections : []).map(sec => ({
+      label: String(sec && sec.label || ''),
+      indexes: (Array.isArray(sec && sec.blockIndexes) ? sec.blockIndexes : []).map(Number).filter(v => Number.isInteger(v) && v >= 1 && v <= blocks.length)
+    })).filter(sec => sec.indexes.length);
+
+    // Deterministische Validierung: jede Block-Nummer GENAU EINMAL vergeben
+    const counts = new Array(blocks.length).fill(0);
+    for (const sec of cleanSections) for (const v of sec.indexes) counts[v - 1]++;
+    const missingIdx = counts.map((c, i) => c === 0 ? i + 1 : null).filter(v => v !== null);
+    const dupIdx = counts.map((c, i) => c > 1 ? i + 1 : null).filter(v => v !== null);
+    if (missingIdx.length || dupIdx.length) {
+      assignFeedback = 'Deine Zuordnung ist unvollständig: ' + (missingIdx.length ? 'Fehlende Block-Nummern: ' + missingIdx.join(', ') + '. ' : '') + (dupIdx.length ? 'Doppelt zugewiesene Block-Nummern: ' + dupIdx.join(', ') + '. ' : '') + 'Jede Block-Nummer 1 bis ' + blocks.length + ' muss GENAU EINMAL vorkommen. Liefere die KOMPLETTE Zuordnung aller Blöcke.';
+      console.warn('[Pipeline] Zuordnung Versuch ' + attempt + ': Indizes fehlen (' + missingIdx.join(',') + ') / doppelt (' + dupIdx.join(',') + ')');
+      continue;
+    }
+
+    sections = cleanSections
+      .map(sec => ({ label: sec.label, first: Math.min(...sec.indexes), indexes: [...sec.indexes] }))
+      .sort((a, b) => a.first - b.first)
+      .map(sec => ({ label: sec.label, lines: sec.indexes.map(v => blocks[v - 1]) }));
+    structure = checkRefrainStructure(sections);
+    completenessIssues = checkStructureCompleteness(rawText, structure, sections);
+    if (completenessIssues.length) structure.issue = true;
+    console.log(`[Pipeline] Zuordnung Versuch ${attempt}/2: ${sections.length} Abschnitte — ${structure.strophes} Strophen / ${structure.refrains} Refrains${structure.issue ? ' (UNVOLLSTÄNDIG)' : ''}`);
+    if (!structure.issue) break;
+    assignFeedback = 'WICHTIG: Deine Zuordnung ist unvollständig oder falsch. ' + (completenessIssues.length ? completenessIssues.join(' ') + ' ' : 'Der Refrain muss als EIGENER Abschnitt mit Label "Refrain" erscheinen — nicht in einen Strophen-Abschnitt integriert, GENAU EINMAL. ') + 'Kurze Fortsetzungs-Blöcke (z.B. "ruht.", "gut!", "Herz.") gehören zu der Textzeile, die sie syntaktisch vervollständigen — prüfe am Seitenbild, wo sie visuell anknüpfen. Der Refrain muss ALLE seine Blöcke enthalten (Kopf, Mittelteil, Ende). Alle Blöcke müssen GENAU EINMAL zugeordnet sein. Liefere die KOMPLETTE Zuordnung.';
+  }
+
+  if (!sections && cleanSections) {
+    // Notfall-Rekonstruktion: doppelte Indizes verwerfen, fehlende an den letzten Abschnitt anhängen
+    console.warn('[Pipeline] Zuordnung nach 2 Versuchen fehlerhaft — Notfall-Rekonstruktion');
+    const used = new Set();
+    const forced = [];
+    for (const sec of cleanSections) {
+      const idxs = sec.indexes.filter(v => !used.has(v));
+      if (!idxs.length) continue;
+      idxs.forEach(v => used.add(v));
+      forced.push({ label: sec.label, indexes: idxs });
+    }
+    for (let v = 1; v <= blocks.length; v++) {
+      if (!used.has(v)) forced[forced.length - 1]?.indexes.push(v);
+    }
+    sections = forced.map(sec => ({ label: sec.label, lines: sec.indexes.sort((a, b) => a - b).map(v => blocks[v - 1]) }));
+    structure = checkRefrainStructure(sections);
+    completenessIssues = checkStructureCompleteness(rawText, structure, sections);
+    if (completenessIssues.length) structure.issue = true;
+  }
+  if (!sections || !sections.length) throw new Error('Zuordnung lieferte keine Abschnitte');
+
+  const postProcessed = rebuildFromSections(sections);
+  const fidelity = checkLyricsFidelity(stripLabels(rawText), stripLabels(postProcessed));
+  const score = fidelity.missingWords.length + fidelity.changedWords.length + (structure.issue ? 5 : 0) + completenessIssues.length * 3 + fragmentLinePenalty(sections);
+  console.log(`[Pipeline] Ergebnis: ${postProcessed.length} Zeichen, Score ${score} (${fidelity.missingWords.length} fehlende, ${fidelity.changedWords.length} geänderte Wörter)`);
+  console.log('Bereinigter Text:\n' + postProcessed);
+  return { postProcessed, parsedSections: sections, fidelity, structure, completenessIssues, score };
+}
 
 async function runGeminiCleanup() {
   const songEl = document.getElementById('song');
@@ -3570,108 +4325,202 @@ async function runGeminiCleanup() {
   if (!rawText) return;
 
   const btn = document.getElementById('aiCleanupBtn');
-  btn.textContent = '⏳ Formatiere…';
+  btn.innerHTML = iconSvg('i-sparkles') + ' Formatiere…';
   btn.disabled = true;
 
+  showProcessing('KI-Formatierung läuft…', 'Gemini bereinigt den Text — das kann einige Sekunden dauern');
   logAction('KI-Formatierung');
   console.group('[Gemini Cleanup] Gestartet');
   console.log('Eingabetext:', rawText.length, 'Zeichen');
   console.log('Bild verfügbar:', !!lastImportedImageBase64);
 
   try {
-    // Request-Body bauen
-    const parts = [];
+    const buildParts = (extraFeedback) => {
+      // Request-Body bauen
+      const parts = [];
 
-    // Prompt
-    parts.push({ text: GEMINI_CLEANUP_PROMPT });
+      // Prompt
+      parts.push({ text: GEMINI_CLEANUP_PROMPT });
 
-    // Multimodal: Bild mitsenden wenn verfügbar
-    if (lastImportedImageBase64 && lastImportedImageMime) {
-      console.log(`Sende Bild mit (${lastImportedImageMime}, ~${(lastImportedImageBase64.length * 0.75 / 1024 / 1024).toFixed(2)} MB)`);
-      parts.push({
-        inline_data: {
-          mime_type: lastImportedImageMime,
-          data: lastImportedImageBase64
-        }
-      });
-      parts.push({ text: 'Das ist das Originalbild des Liedtexts. Nutze es um die korrekte Textstruktur zu erkennen.\n\nHier ist der OCR-erkannte Rohtext:\n\n' + rawText });
-    } else {
-      parts.push({ text: 'Hier ist der OCR-erkannte Rohtext:\n\n' + rawText });
-    }
+      // Multimodal: Bild mitsenden wenn verfügbar
+      if (lastImportedImageBase64 && lastImportedImageMime) {
+        console.log(`Sende Bild mit (${lastImportedImageMime}, ~${(lastImportedImageBase64.length * 0.75 / 1024 / 1024).toFixed(2)} MB)`);
+        parts.push({
+          inline_data: {
+            mime_type: lastImportedImageMime,
+            data: lastImportedImageBase64
+          }
+        });
+        parts.push({ text: 'Das ist das Originalbild des Liedtexts. Nutze es um die korrekte Textstruktur zu erkennen.\n\nHier ist der OCR-erkannte Rohtext:\n\n' + rawText });
+      } else {
+        parts.push({ text: 'Hier ist der OCR-erkannte Rohtext:\n\n' + rawText });
+      }
+      // Deterministischer Hinweis: nummerierte Strophen sind eigene Abschnitte
+      const expectedStrophes = countExpectedStrophes(rawText);
+      if (expectedStrophes.size >= 2) {
+        parts.push({ text: 'Hinweis: Die Quelle enthält ' + expectedStrophes.size + ' nummerierte Strophen (' + [...expectedStrophes].sort().join(', ') + '.). Jede nummerierte Strophe ist ein EIGENER Abschnitt ("Strophe 1", "Strophe 2", …) — gruppiere die nummerierten Strophenzeilen NICHT zu einem einzigen Abschnitt zusammen.' });
+      }
+      if (extraFeedback) parts.push({ text: extraFeedback });
+      return parts;
+    };
 
-    if (!checkRateLimit('gemini')) throw new Error('Rate Limit');
-
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite:generateContent?key=${GOOGLE_API_KEY}`;
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GOOGLE_API_KEY}`;
     console.log('Gemini API Request an:', url.replace(GOOGLE_API_KEY, '***'));
 
-    const startTime = performance.now();
-    const response = await fetchWithRetry(url, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        contents: [{ parts }]
-      })
-    });
+    // Geometrie-Kontext und Fragment-Quote VOR dem Single-Call bestimmen — bei bindender
+    // Liedblatt-Geometrie wird das Single-Call-Ergebnis ohnehin verworfen, also gar nicht
+    // erst berechnen; die Fragment-Quote entscheidet, ob die Pipeline überhaupt eine Chance hat
+    const geometryContext = computeGeometryContext(rawText);
+    const fragQuote = sourceFragmentQuote(rawText);
 
-    const duration = ((performance.now() - startTime) / 1000).toFixed(1);
-    console.log(`Gemini API Response: ${response.status} ${response.statusText} (${duration}s)`);
+    // Verify-and-Repair: Versuch 1 = schneller Single-Call ohne Thinking. Bestehen die
+    // Qualitätsprüfungen nicht, folgt die 2-Call-Pipeline (Transkription + Zuordnung)
+    // statt eines zweiten Single-Calls — dort wird der Wortlaut nur EINMAL transkribiert
+    // und die Zuordnung schreibt keinen Text, wodurch Zeilen-Dropping ausgeschlossen ist.
+    const runSingleCall = async (extraFeedback) => {
+      const startTime = performance.now();
+      const parts = buildParts(extraFeedback);
+      setProcessingStatus('Sende Text' + (lastImportedImageBase64 ? ' und Seitenbild' : '') + ' an Gemini…');
+      if (!checkRateLimit('gemini')) throw new Error('Rate Limit');
 
-    if (!response.ok) {
-      const err = await response.json();
-      console.error('Gemini API Fehler:', err);
-      throw new Error(err.error?.message || response.statusText);
-    }
+      const generationConfig = {
+        temperature: 0.2,
+        responseMimeType: 'application/json',
+        responseSchema: GEMINI_CLEANUP_SCHEMA,
+        // Schnellpfad ohne Thinking — einfache Dokumente bestehen hier direkt (2.5-4s)
+        thinkingConfig: { thinkingBudget: 0 }
+      };
+      const response = await fetchWithRetry(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: [{ parts }],
+          generationConfig
+        })
+      }, 2, 120000);
 
-    const data = await response.json();
-    console.log('Gemini Response-Daten:', JSON.stringify(data).slice(0, 500));
+      const duration = ((performance.now() - startTime) / 1000).toFixed(1);
+      console.log(`Gemini API Response: ${response.status} ${response.statusText} (${duration}s)`);
+      setProcessingStatus(`Antwort empfangen (${duration}s) — prüfe Wortlaut und Struktur…`);
 
-    const candidate = data.candidates?.[0];
-    if (!candidate) throw new Error('Keine Antwort von Gemini erhalten');
+      if (!response.ok) {
+        const err = await response.json();
+        console.error('Gemini API Fehler:', err);
+        throw new Error(err.error?.message || response.statusText);
+      }
 
-    const cleanedRaw = candidate.content?.parts?.map(p => p.text).join('').trim();
-    if (!cleanedRaw) throw new Error('Leere Antwort von Gemini');
+      const data = await response.json();
+      console.log('Gemini Response-Daten:', JSON.stringify(data).slice(0, 500));
 
-    // Nachbearbeitung: Gemini hält sich nicht immer an alle Regeln
-    let lines = cleanedRaw.split('\n');
+      const candidate = data.candidates?.[0];
+      if (!candidate) throw new Error('Keine Antwort von Gemini erhalten');
 
-    // Strophennummern entfernen: "1. Text" → "Text"
-    lines = lines.map(line => line.replace(/^\d+\.\s+/, ''));
+      const cleanedRaw = candidate.content?.parts?.map(p => p.text).join('').trim();
+      if (!cleanedRaw) throw new Error('Leere Antwort von Gemini');
 
-    // Zeilenübergreifende Silbentrennung reparieren: "da-" + "für." → "dafür."
-    const joined = [];
-    for (let i = 0; i < lines.length; i++) {
-      const t = lines[i].trimEnd();
-      if (t.match(/\p{L}-$/u) && i + 1 < lines.length && lines[i + 1].trim().match(/^\p{Ll}/u)) {
-        joined.push(t.slice(0, -1) + lines[i + 1].trim());
-        i++;
-      } else {
-        joined.push(lines[i]);
+      // Structured Output parsen — Fallback: Freitext-Antwort wie bisher bereinigen
+      let postProcessed, parsedSections = null;
+      try {
+        const parsed = JSON.parse(cleanedRaw);
+        parsedSections = Array.isArray(parsed.sections) ? parsed.sections : null;
+        postProcessed = rebuildFromSections(parsed.sections);
+        console.log(`Structured Output: ${parsed.sections?.length ?? 0} Abschnitte (bilingual: ${!!parsed.bilingual})`);
+        if (!postProcessed) throw new Error('Keine Abschnitte in der Antwort');
+      } catch (parseErr) {
+        console.warn('Structured Output nicht verwertbar, nutze Freitext-Fallback:', parseErr.message);
+        postProcessed = cleanupFreeTextResponse(cleanedRaw);
+      }
+
+      console.log(`Ergebnis: ${postProcessed.length} Zeichen (vorher: ${rawText.length})`);
+      console.log('Bereinigter Text:\n' + postProcessed);
+
+      const fidelity = checkLyricsFidelity(rawText, postProcessed);
+      const structure = checkRefrainStructure(parsedSections);
+      const completenessIssues = checkStructureCompleteness(rawText, structure, parsedSections);
+      if (completenessIssues.length) structure.issue = true;
+      // Strukturfehler fließen mit in den Score (Penalty 5), damit die Pipeline auch bei
+      // gleichem Wortlaut-Score gewinnt; Fragment-Zeilen zählen gegen BEIDE Kandidaten
+      const score = fidelity.missingWords.length + fidelity.changedWords.length + (structure.issue ? 5 : 0) + completenessIssues.length * 3 + fragmentLinePenalty(parsedSections);
+      console.log(`Versuch 1 (Single-Call): ${fidelity.missingWords.length} fehlende, ${fidelity.changedWords.length} geänderte Wörter, Struktur: ${structure.strophes} Strophen / ${structure.refrains} Refrains${structure.issue ? ' (UNVOLLSTÄNDIG)' : ''}`);
+
+      return { postProcessed, fidelity, score, structure, parsedSections, completenessIssues };
+    };
+    let bestResult = null;
+    if (geometryContext.columnHint) {
+      console.warn('Liedblatt-Geometrie erkannt — Pipeline direkt, Single-Call übersprungen');
+    } else {
+      bestResult = await runSingleCall();
+      // Fragmentreiche Quellen: die Pipeline ist ausgeschlossen (sie kann Fragment-Musch nie
+      // heilen) — stattdessen wiederholt der Single-Call, wenn die nichtdeterministische
+      // Struktur-Zuordnung verdächtig ausgefallen ist. Verdächtig ist die Zuordnung auch ohne
+      // formale Strukturverletzung, wenn ein einziger Refrain-Abschnitt viel mehr Zeilen schluckt
+      // als jede Strophe (typisch: Strophenpaare + Rest in einem Riesen-Refrain).
+      if (fragQuote >= 0.3 && singleCallStructureSuspicious(bestResult)) {
+        console.warn('Struktur verdächtig bei fragmentreicher Quelle (' + Math.round(fragQuote * 100) + '% kurze Zeilen) — Single-Call-Retry');
+        const feedback = 'WICHTIG: Deine vorherige Zuordnung war strukturell unvollständig. ' + (bestResult.completenessIssues?.length ? bestResult.completenessIssues.join(' ') : '') + ' Der Refrain darf GENAU EINMAL als eigener Abschnitt erscheinen — nicht je Strophenpaar. Alle Strophen müssen denselben Aufbau haben (gleiche Zeilenzahl pro Strophe). Nutze das Seitenbild, um zu erkennen, welche Zeilen zu derselben Strophe gehören.';
+        const retryResult = await runSingleCall(feedback);
+        if (retryResult.score < bestResult.score) bestResult = retryResult;
       }
     }
 
-    // Titel-Duplikat entfernen: Wenn die erste Zeile (oder Teile davon) im restlichen Text vorkommt
-    if (joined.length >= 2) {
-      const first = joined[0].trim();
-      if (first && !isSectionLabel(first)) {
-        const rest = joined.slice(1).join('\n');
-        if (rest.includes(first)) {
-          console.log(`  Titel-Duplikat entfernt: "${first}"`);
-          joined.shift();
-          // Führende Leerzeile nach Entfernung auch weg
-          while (joined.length && !joined[0].trim()) joined.shift();
+    // Pipeline-Fallback nur bei bestandener Prüfung überspringen (Normaldokumente) —
+    // und wenn der Fehler deterministisch reparierbar ist (Refrain-Duplizierung im Struktur-Fallback)
+    // Bei erkennbarer Liedblatt-Geometrie (Spalten-Klassifikation möglich) immer: der
+    // Single-Call hat dort die Fortsetzungs-Zuordnung wiederholt falsch getroffen.
+    // Fragmentreiche Quelle (interleaved OCR-Musch): Pipeline kann nichts reißen — überspringen,
+    // die Single-Call-Reassemblierung ist der einzige Kandidat der Fragmente heilen kann.
+    const pipelineNeeded = !!geometryContext.columnHint ||
+      (bestResult.score > 0 && !(bestResult.structure && bestResult.structure.issue && bestResult.structure.refrains >= 1 && bestResult.score <= 5) && fragQuote < 0.3);
+    if (!pipelineNeeded && bestResult.score > 0 && fragQuote >= 0.3) {
+      console.log('Fragmentreiche Quelle (' + Math.round(fragQuote * 100) + '% kurze Zeilen) — Pipeline übersprungen, Single-Call-Reassemblierung');
+    }
+    if (pipelineNeeded) {
+      console.warn(geometryContext.columnHint ? 'Liedblatt-Geometrie erkannt — 2-Call-Pipeline mit bindender Spalten-Klassifikation' : 'Qualitätsprüfung nicht bestanden — 2-Call-Pipeline (Transkription + Zuordnung)');
+      let pipelineResult = null;
+      try {
+        pipelineResult = await runCleanupPipeline(rawText, geometryContext);
+      } catch (e) {
+        console.warn('Pipeline fehlgeschlagen — Single-Call-Ergebnis bleibt:', e.message);
+        if (!bestResult) {
+          console.warn('Kein Single-Call-Ergebnis vorhanden (Geometrie-Shortcut) — starte Single-Call als Fallback');
+          bestResult = await runSingleCall();
+        }
+      }
+      if (pipelineResult) {
+        if (!bestResult || pipelineResult.score <= bestResult.score) {
+          console.log(`Pipeline-Ergebnis übernommen (Score ${pipelineResult.score}${bestResult ? ' vs. ' + bestResult.score : ''})`);
+          bestResult = pipelineResult;
+        } else {
+          console.log(`Pipeline-Ergebnis schlechter als Versuch 1 (Score ${pipelineResult.score} vs. ${bestResult.score}) — Single-Call bleibt`);
         }
       }
     }
 
-    const postProcessed = joined.join('\n')
-      // CHOR: / Chorus: durch Refrain ersetzen
-      .replace(/^(CHOR|Chorus|Припев)\s*:?\s*$/gim, 'Refrain')
-      // Markdown Codeblöcke entfernen falls Gemini sie erzeugt
-      .replace(/^```\w*\n?/gm, '').replace(/\n?```$/gm, '')
-      .trim();
+    setProcessingStatus('Übernehme das Ergebnis in die Folien…');
 
-    console.log(`Ergebnis: ${postProcessed.length} Zeichen (vorher: ${rawText.length})`);
-    console.log('Bereinigter Text:\n' + postProcessed);
+    // Struktur-Normalisierung: Der Refrain gehört nach jeder Strophe (Partitur-Konvention).
+    // Gibt das Modell ihn nur einmal aus, wird er deterministisch nach jeder Strophe dupliziert
+    let postProcessed = bestResult.postProcessed;
+    let fidelity = bestResult.fidelity;
+    if (bestResult.structure && bestResult.structure.refrains >= 1 && bestResult.structure.strophes >= 2 && bestResult.structure.refrains < bestResult.structure.strophes && bestResult.parsedSections) {
+      const refrainSec = bestResult.parsedSections.find(s => /refrain|припев/i.test(String(s && s.label || '')));
+      const isStrophe = s => /strophe|куплет|verse|vers/i.test(String(s && s.label || '')) || /^\d/.test(String(s && s.label || ''));
+      const rebuilt = [];
+      for (const sec of bestResult.parsedSections) {
+        if (sec === refrainSec) continue; // Original entfernen — Kopien folgen nach jeder Strophe
+        rebuilt.push(sec);
+        if (isStrophe(sec)) rebuilt.push({ label: 'Refrain', lines: refrainSec.lines });
+      }
+      const fixed = rebuildFromSections(rebuilt);
+      const fidelityFixed = checkLyricsFidelity(rawText, fixed);
+      const baseScore = bestResult.score - (bestResult.structure.issue ? 5 : 0);
+      if (fidelityFixed.missingWords.length + fidelityFixed.changedWords.length <= baseScore) {
+        console.log('Struktur-Fallback: Refrain nach jeder Strophe dupliziert');
+        postProcessed = fixed;
+        fidelity = fidelityFixed;
+        bestResult.structure.issue = false;
+      }
+    }
 
     songEl.value = postProcessed;
     runFormat();
@@ -3686,6 +4535,20 @@ async function runGeminiCleanup() {
     }
     pushHistory();
     statusEl.className = 'status ok';
+    if (fidelity.changedWords.length || fidelity.missingWords.length) {
+      if (fidelity.changedWords.length) console.warn('Wörter im Ergebnis, die nicht im Original vorkommen:', fidelity.changedWords);
+      if (fidelity.missingWords.length) console.warn('Originalwörter, die im Ergebnis fehlen:', fidelity.missingWords);
+      statusEl.className = 'status warn';
+      const warnParts = [
+        ...fidelity.changedWords.slice(0, 4),
+        ...fidelity.missingWords.slice(0, 4).map(w => '–' + w)
+      ];
+      statusEl.textContent += '  —  Achtung: KI hat den Wortlaut geändert (' + warnParts.join(', ') + ')';
+    }
+    if (bestResult.structure && bestResult.structure.issue) {
+      statusEl.className = 'status warn';
+      statusEl.textContent += '  —  Hinweis: Refrain-Struktur unvollständig (Refrain gehört nach jeder Strophe)';
+    }
 
     hideCleanupButton();
 
@@ -3695,7 +4558,8 @@ async function runGeminiCleanup() {
     statusEl.textContent = 'KI-Formatierung fehlgeschlagen: ' + e.message;
     statusEl.className = 'status err';
   } finally {
-    btn.textContent = '✨ KI-Formatierung';
+    hideProcessing();
+    btn.innerHTML = iconSvg('i-sparkles') + ' KI-Formatierung';
     btn.disabled = false;
     console.groupEnd();
   }
